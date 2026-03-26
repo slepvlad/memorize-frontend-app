@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -159,6 +160,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 28,
     paddingBottom: 40,
+    paddingTop: Platform.OS === 'web' ? 20 : 0,
     flexGrow: 1,
   },
   backButton: {

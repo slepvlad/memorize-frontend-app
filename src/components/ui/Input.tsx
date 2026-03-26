@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInputProps,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing } from '../../theme';
@@ -81,6 +82,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
     paddingHorizontal: spacing.lg,
+    ...Platform.select({
+      web: {
+        transitionDuration: '150ms',
+        transitionProperty: 'border-color, background-color',
+      } as any,
+    }),
   },
   inputFocused: {
     borderColor: colors.primary,
@@ -94,6 +101,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 15,
     color: colors.text,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      } as any,
+    }),
   },
   errorText: {
     fontSize: 12,

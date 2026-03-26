@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 28,
     paddingBottom: spacing.xxxl,
+    paddingTop: Platform.OS === 'web' ? 40 : 0,
   },
   spacer: {
     flex: 1,
@@ -84,5 +85,6 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
+    paddingBottom: Platform.OS === 'web' ? 20 : 0,
   },
 });

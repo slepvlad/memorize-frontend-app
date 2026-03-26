@@ -1,11 +1,12 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  Platform,
 } from 'react-native';
 import { colors, radius } from '../../theme';
 
@@ -33,14 +34,16 @@ export function Button({
   const isDisabled = disabled || loading;
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.85}
-      style={[
+      style={({ pressed, hovered }: any) => [
         styles.base,
         styles[variant],
         isDisabled && styles.disabled,
+        Platform.OS === 'web' && ({ cursor: isDisabled ? 'not-allowed' : 'pointer' } as any),
+        Platform.OS === 'web' && hovered && !isDisabled && styles[`${variant}Hover` as keyof typeof styles],
+        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
         style,
       ]}
     >
@@ -63,7 +66,7 @@ export function Button({
           </Text>
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -76,17 +79,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: radius.lg,
     gap: 8,
+    ...Platform.select({
+      web: {
+        transitionDuration: '150ms',
+        transitionProperty: 'background-color, opacity, transform',
+      } as any,
+    }),
   },
   primary: {
     backgroundColor: colors.primary,
+  },
+  primaryHover: {
+    backgroundColor: colors.primaryDark,
   },
   secondary: {
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  secondaryHover: {
+    backgroundColor: colors.surface,
+  },
   ghost: {
     backgroundColor: 'transparent',
+  },
+  ghostHover: {
+    backgroundColor: colors.surface,
   },
   disabled: {
     opacity: 0.5,
