@@ -4,7 +4,8 @@ import { tokenStorage } from '../storage/tokenStorage';
 
 interface AuthState {
   isAuthenticated: boolean;
-  isLoading: boolean;
+  isInitializing: boolean; // true only during the boot-time token check
+  isLoading: boolean;      // true during login / register submissions
   error: string | null;
 }
 
@@ -20,7 +21,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
-    isLoading: true,
+    isInitializing: true,
+    isLoading: false,
     error: null,
   });
 
@@ -33,20 +35,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = await tokenStorage.getAccessToken();
       if (token) {
-        // Optionally validate the token by calling refresh
         try {
           await authApi.refreshToken();
-          setState({ isAuthenticated: true, isLoading: false, error: null });
+          setState({ isAuthenticated: true, isInitializing: false, isLoading: false, error: null });
         } catch {
-          // Token expired and refresh failed
           await tokenStorage.clearTokens();
-          setState({ isAuthenticated: false, isLoading: false, error: null });
+          setState({ isAuthenticated: false, isInitializing: false, isLoading: false, error: null });
         }
       } else {
-        setState({ isAuthenticated: false, isLoading: false, error: null });
+        setState({ isAuthenticated: false, isInitializing: false, isLoading: false, error: null });
       }
     } catch {
-      setState({ isAuthenticated: false, isLoading: false, error: null });
+      setState({ isAuthenticated: false, isInitializing: false, isLoading: false, error: null });
     }
   };
 
@@ -54,13 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       await authApi.login(credentials);
-      setState({ isAuthenticated: true, isLoading: false, error: null });
+      setState({ isAuthenticated: true, isInitializing: false, isLoading: false, error: null });
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
         error.response?.data?.error ||
         'Invalid email or password. Please try again.';
-      setState({ isAuthenticated: false, isLoading: false, error: message });
+      setState((prev) => ({ ...prev, isLoading: false, error: message }));
       throw error;
     }
   }, []);
@@ -69,20 +69,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       await authApi.register(credentials);
-      setState({ isAuthenticated: true, isLoading: false, error: null });
+      setState({ isAuthenticated: true, isInitializing: false, isLoading: false, error: null });
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
         error.response?.data?.error ||
         'Registration failed. Please try again.';
-      setState({ isAuthenticated: false, isLoading: false, error: message });
+      setState((prev) => ({ ...prev, isLoading: false, error: message }));
       throw error;
     }
   }, []);
 
   const logout = useCallback(async () => {
     await authApi.logout();
-    setState({ isAuthenticated: false, isLoading: false, error: null });
+    setState({ isAuthenticated: false, isInitializing: false, isLoading: false, error: null });
   }, []);
 
   const clearError = useCallback(() => {

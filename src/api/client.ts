@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { tokenStorage } from '../storage/tokenStorage';
+import { triggerToast } from '../context/ToastContext';
 
 // ⚠️ Change this to your actual backend URL
 export const API_BASE_URL = 'http://localhost:8080';
@@ -55,6 +56,7 @@ apiClient.interceptors.response.use(
       // Don't retry refresh endpoint itself
       if (originalRequest.url?.includes('/api/auth/refresh')) {
         await tokenStorage.clearTokens();
+        triggerToast('Your session has expired. Please sign in again.', 'error');
         return Promise.reject(error);
       }
 
@@ -100,10 +102,23 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await tokenStorage.clearTokens();
+        triggerToast('Your session has expired. Please sign in again.', 'error');
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
+    }
+
+    // Auth endpoints (login/register) display their own inline error banners — skip toast for those.
+    // 401s are handled by the token refresh flow above.
+    const isAuthEndpoint = /\/api\/auth\/(login|register)/.test(error.config?.url ?? '');
+    if (error.response?.status !== 401 && !isAuthEndpoint) {
+      const message =
+        (error.response?.data as any)?.message ||
+        (error.response?.data as any)?.error ||
+        (error.code === 'ECONNABORTED' ? 'Request timed out. Please try again.' : null) ||
+        (!error.response ? 'Network error. Check your connection.' : 'Something went wrong. Please try again.');
+      triggerToast(message, 'error');
     }
 
     return Promise.reject(error);

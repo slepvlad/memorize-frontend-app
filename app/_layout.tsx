@@ -3,16 +3,17 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View, Platform } from 'react-native';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { ToastProvider } from '../src/context/ToastContext';
 import { WebContainer } from '../src/components/ui/WebContainer';
 import { colors } from '../src/theme';
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isInitializing } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isInitializing) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
@@ -21,7 +22,7 @@ function RootLayoutNav() {
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isInitializing, segments]);
 
   // Inject global web styles to remove default browser margins/scrollbars
   useEffect(() => {
@@ -47,7 +48,7 @@ function RootLayoutNav() {
     }
   }, []);
 
-  if (isLoading) {
+  if (isInitializing) {
     return (
       <View
         style={{
@@ -75,8 +76,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </ToastProvider>
   );
 }
