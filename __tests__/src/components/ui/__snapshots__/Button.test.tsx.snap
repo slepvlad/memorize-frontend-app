@@ -1,0 +1,219 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Button renders ghost variant 1`] = `
+<View
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": false,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "alignItems": "center",
+        "borderRadius": 16,
+        "flexDirection": "row",
+        "gap": 8,
+        "justifyContent": "center",
+        "paddingHorizontal": 24,
+        "paddingVertical": 16,
+      },
+      {
+        "backgroundColor": "transparent",
+      },
+      false,
+      false,
+      false,
+      false,
+      undefined,
+    ]
+  }
+>
+  <Text
+    style={
+      [
+        {
+          "fontSize": 16,
+          "fontWeight": "600",
+        },
+        {
+          "color": "#1D9E75",
+        },
+        undefined,
+      ]
+    }
+  >
+    Ghost
+  </Text>
+</View>
+`;
+
+exports[`Button renders primary variant by default 1`] = `
+<View
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": false,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "alignItems": "center",
+        "borderRadius": 16,
+        "flexDirection": "row",
+        "gap": 8,
+        "justifyContent": "center",
+        "paddingHorizontal": 24,
+        "paddingVertical": 16,
+      },
+      {
+        "backgroundColor": "#1D9E75",
+      },
+      false,
+      false,
+      false,
+      false,
+      undefined,
+    ]
+  }
+>
+  <Text
+    style={
+      [
+        {
+          "fontSize": 16,
+          "fontWeight": "600",
+        },
+        {
+          "color": "#FFFFFF",
+        },
+        undefined,
+      ]
+    }
+  >
+    Primary
+  </Text>
+</View>
+`;
+
+exports[`Button renders secondary variant 1`] = `
+<View
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": false,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "alignItems": "center",
+        "borderRadius": 16,
+        "flexDirection": "row",
+        "gap": 8,
+        "justifyContent": "center",
+        "paddingHorizontal": 24,
+        "paddingVertical": 16,
+      },
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "rgba(0,0,0,0.08)",
+        "borderWidth": 1,
+      },
+      false,
+      false,
+      false,
+      false,
+      undefined,
+    ]
+  }
+>
+  <Text
+    style={
+      [
+        {
+          "fontSize": 16,
+          "fontWeight": "600",
+        },
+        {
+          "color": "#1A1A1A",
+        },
+        undefined,
+      ]
+    }
+  >
+    Secondary
+  </Text>
+</View>
+`;

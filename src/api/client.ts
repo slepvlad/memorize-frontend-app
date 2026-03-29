@@ -53,10 +53,14 @@ apiClient.interceptors.response.use(
 
     // If 401 and we haven't already retried
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Don't retry refresh endpoint itself
-      if (originalRequest.url?.includes('/api/auth/refresh')) {
-        await tokenStorage.clearTokens();
-        triggerToast('Your session has expired. Please sign in again.', 'error');
+      // Auth endpoints returning 401 mean wrong credentials — no refresh needed.
+      // Refresh endpoint 401 means the session is truly expired.
+      const authEndpoint401 = /\/api\/auth\/(login|register|refresh)/.test(originalRequest.url ?? '');
+      if (authEndpoint401) {
+        if (originalRequest.url?.includes('/api/auth/refresh')) {
+          await tokenStorage.clearTokens();
+          triggerToast('Your session has expired. Please sign in again.', 'error');
+        }
         return Promise.reject(error);
       }
 

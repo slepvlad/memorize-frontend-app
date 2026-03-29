@@ -1,0 +1,97 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WebContainer — web desktop (width >= 768) renders phone frame on desktop web 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#F0EFEB",
+      "flex": 1,
+      "justifyContent": "center",
+      "paddingVertical": 24,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": 32,
+          "height": "100%",
+          "maxHeight": 844,
+          "overflow": "hidden",
+          "width": 430,
+        },
+        {
+          "borderColor": "rgba(0,0,0,0.1)",
+          "borderWidth": 3,
+        },
+      ]
+    }
+  />
+</View>
+`;
+
+exports[`WebContainer — withFrame prop renders with frame border by default 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#F0EFEB",
+      "flex": 1,
+      "justifyContent": "center",
+      "paddingVertical": 24,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": 32,
+          "height": "100%",
+          "maxHeight": 844,
+          "overflow": "hidden",
+          "width": 430,
+        },
+        {
+          "borderColor": "rgba(0,0,0,0.1)",
+          "borderWidth": 3,
+        },
+      ]
+    }
+  />
+</View>
+`;
+
+exports[`WebContainer — withFrame prop renders without frame border when withFrame=false 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#F0EFEB",
+      "flex": 1,
+      "justifyContent": "center",
+      "paddingVertical": 24,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": 32,
+          "height": "100%",
+          "maxHeight": 844,
+          "overflow": "hidden",
+          "width": 430,
+        },
+        false,
+      ]
+    }
+  />
+</View>
+`;

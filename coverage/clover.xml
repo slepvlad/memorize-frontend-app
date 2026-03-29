@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1774813177669" clover="3.2.0">
+  <project timestamp="1774813177669" name="All files">
+    <metrics statements="361" coveredstatements="344" conditionals="237" coveredconditionals="209" methods="114" coveredmethods="101" elements="712" coveredelements="654" complexity="0" loc="361" ncloc="361" packages="7" files="18" classes="18"/>
+    <package name="app.(auth)">
+      <metrics statements="86" coveredstatements="83" conditionals="70" coveredconditionals="63" methods="27" coveredmethods="23"/>
+      <file name="_layout.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(auth)/_layout.tsx">
+        <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
+        <line num="4" count="0" type="stmt"/>
+      </file>
+      <file name="index.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(auth)/index.tsx">
+        <metrics statements="5" coveredstatements="5" conditionals="4" coveredconditionals="2" methods="3" coveredmethods="3"/>
+        <line num="10" count="7" type="stmt"/>
+        <line num="12" count="7" type="stmt"/>
+        <line num="34" count="1" type="stmt"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="47" count="1" type="stmt"/>
+      </file>
+      <file name="login.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(auth)/login.tsx">
+        <metrics statements="29" coveredstatements="28" conditionals="18" coveredconditionals="16" methods="10" coveredmethods="9"/>
+        <line num="22" count="47" type="stmt"/>
+        <line num="23" count="47" type="stmt"/>
+        <line num="25" count="47" type="stmt"/>
+        <line num="26" count="47" type="stmt"/>
+        <line num="27" count="47" type="stmt"/>
+        <line num="32" count="47" type="stmt"/>
+        <line num="33" count="8" type="stmt"/>
+        <line num="35" count="8" type="cond" truecount="2" falsecount="0"/>
+        <line num="36" count="3" type="stmt"/>
+        <line num="37" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="38" count="1" type="stmt"/>
+        <line num="41" count="8" type="cond" truecount="2" falsecount="0"/>
+        <line num="42" count="6" type="stmt"/>
+        <line num="45" count="8" type="stmt"/>
+        <line num="46" count="8" type="stmt"/>
+        <line num="49" count="47" type="stmt"/>
+        <line num="50" count="8" type="stmt"/>
+        <line num="51" count="8" type="cond" truecount="2" falsecount="0"/>
+        <line num="53" count="2" type="stmt"/>
+        <line num="54" count="2" type="stmt"/>
+        <line num="61" count="47" type="stmt"/>
+        <line num="73" count="1" type="stmt"/>
+        <line num="96" count="6" type="stmt"/>
+        <line num="97" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="108" count="3" type="stmt"/>
+        <line num="109" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="136" count="0" type="stmt"/>
+        <line num="145" count="1" type="stmt"/>
+        <line num="155" count="1" type="stmt"/>
+      </file>
+      <file name="register.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(auth)/register.tsx">
+        <metrics statements="51" coveredstatements="50" conditionals="48" coveredconditionals="45" methods="13" coveredmethods="11"/>
+        <line num="24" count="18" type="stmt"/>
+        <line num="25" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="26" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="27" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="28" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="29" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="31" count="18" type="cond" truecount="2" falsecount="0"/>
+        <line num="32" count="15" type="cond" truecount="2" falsecount="0"/>
+        <line num="33" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="34" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="35" count="1" type="stmt"/>
+        <line num="39" count="73" type="stmt"/>
+        <line num="40" count="73" type="stmt"/>
+        <line num="42" count="73" type="stmt"/>
+        <line num="43" count="73" type="stmt"/>
+        <line num="44" count="73" type="stmt"/>
+        <line num="45" count="73" type="stmt"/>
+        <line num="51" count="73" type="cond" truecount="2" falsecount="0"/>
+        <line num="53" count="73" type="stmt"/>
+        <line num="54" count="10" type="stmt"/>
+        <line num="56" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="57" count="3" type="stmt"/>
+        <line num="58" count="7" type="cond" truecount="2" falsecount="0"/>
+        <line num="59" count="1" type="stmt"/>
+        <line num="62" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="63" count="5" type="stmt"/>
+        <line num="64" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="65" count="1" type="stmt"/>
+        <line num="68" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="69" count="7" type="stmt"/>
+        <line num="70" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="71" count="1" type="stmt"/>
+        <line num="74" count="10" type="stmt"/>
+        <line num="75" count="10" type="stmt"/>
+        <line num="78" count="73" type="stmt"/>
+        <line num="79" count="10" type="stmt"/>
+        <line num="80" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="82" count="2" type="stmt"/>
+        <line num="83" count="2" type="stmt"/>
+        <line num="89" count="73" type="stmt"/>
+        <line num="101" count="1" type="stmt"/>
+        <line num="124" count="8" type="stmt"/>
+        <line num="125" count="8" type="cond" truecount="2" falsecount="0"/>
+        <line num="137" count="10" type="stmt"/>
+        <line num="138" count="10" type="cond" truecount="1" falsecount="1"/>
+        <line num="150" count="90" type="stmt"/>
+        <line num="175" count="3" type="stmt"/>
+        <line num="176" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="177" count="0" type="stmt"/>
+        <line num="194" count="1" type="stmt"/>
+        <line num="204" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="app.(tabs)">
+      <metrics statements="80" coveredstatements="75" conditionals="65" coveredconditionals="59" methods="29" coveredmethods="24"/>
+      <file name="_layout.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(tabs)/_layout.tsx">
+        <metrics statements="5" coveredstatements="0" conditionals="4" coveredconditionals="0" methods="5" coveredmethods="0"/>
+        <line num="7" count="0" type="stmt"/>
+        <line num="32" count="0" type="stmt"/>
+        <line num="41" count="0" type="stmt"/>
+        <line num="50" count="0" type="stmt"/>
+        <line num="59" count="0" type="stmt"/>
+      </file>
+      <file name="index.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(tabs)/index.tsx">
+        <metrics statements="9" coveredstatements="9" conditionals="8" coveredconditionals="7" methods="5" coveredmethods="5"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="15" count="20" type="stmt"/>
+        <line num="16" count="20" type="stmt"/>
+        <line num="18" count="20" type="stmt"/>
+        <line num="46" count="140" type="stmt"/>
+        <line num="61" count="1" type="stmt"/>
+        <line num="71" count="1" type="stmt"/>
+        <line num="83" count="60" type="stmt"/>
+        <line num="115" count="1" type="stmt"/>
+      </file>
+      <file name="learn.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(tabs)/learn.tsx">
+        <metrics statements="17" coveredstatements="17" conditionals="6" coveredconditionals="6" methods="7" coveredmethods="7"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="31" count="33" type="stmt"/>
+        <line num="32" count="33" type="stmt"/>
+        <line num="34" count="33" type="stmt"/>
+        <line num="35" count="33" type="stmt"/>
+        <line num="37" count="33" type="stmt"/>
+        <line num="39" count="33" type="stmt"/>
+        <line num="40" count="9" type="stmt"/>
+        <line num="41" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="42" count="8" type="stmt"/>
+        <line num="44" count="1" type="stmt"/>
+        <line num="48" count="33" type="stmt"/>
+        <line num="62" count="99" type="stmt"/>
+        <line num="107" count="1" type="stmt"/>
+        <line num="113" count="1" type="stmt"/>
+        <line num="119" count="7" type="stmt"/>
+        <line num="129" count="1" type="stmt"/>
+      </file>
+      <file name="progress.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(tabs)/progress.tsx">
+        <metrics statements="9" coveredstatements="9" conditionals="4" coveredconditionals="4" methods="4" coveredmethods="4"/>
+        <line num="5" count="1" type="stmt"/>
+        <line num="12" count="1" type="stmt"/>
+        <line num="22" count="1" type="stmt"/>
+        <line num="29" count="12" type="stmt"/>
+        <line num="31" count="12" type="stmt"/>
+        <line num="42" count="48" type="stmt"/>
+        <line num="56" count="84" type="stmt"/>
+        <line num="88" count="36" type="stmt"/>
+        <line num="109" count="1" type="stmt"/>
+      </file>
+      <file name="quiz.tsx" path="/Users/Revan/IdeaProjects/memorize/app/app/(tabs)/quiz.tsx">
+        <metrics statements="40" coveredstatements="40" conditionals="43" coveredconditionals="42" methods="8" coveredmethods="8"/>
+        <line num="13" count="1" type="stmt"/>
+        <line num="47" count="37" type="stmt"/>
+        <line num="48" count="37" type="stmt"/>
+        <line num="49" count="37" type="stmt"/>
+        <line num="50" count="37" type="stmt"/>
+        <line num="52" count="37" type="stmt"/>
+        <line num="54" count="37" type="stmt"/>
+        <line num="55" count="13" type="cond" truecount="1" falsecount="1"/>
+        <line num="56" count="13" type="stmt"/>
+        <line num="57" count="13" type="stmt"/>
+        <line num="58" count="13" type="cond" truecount="2" falsecount="0"/>
+        <line num="59" count="11" type="stmt"/>
+        <line num="63" count="37" type="stmt"/>
+        <line num="64" count="7" type="cond" truecount="2" falsecount="0"/>
+        <line num="65" count="6" type="stmt"/>
+        <line num="66" count="6" type="stmt"/>
+        <line num="67" count="6" type="stmt"/>
+        <line num="70" count="1" type="stmt"/>
+        <line num="71" count="1" type="stmt"/>
+        <line num="72" count="1" type="stmt"/>
+        <line num="73" count="1" type="stmt"/>
+        <line num="77" count="37" type="stmt"/>
+        <line num="78" count="148" type="cond" truecount="2" falsecount="0"/>
+        <line num="79" count="52" type="cond" truecount="2" falsecount="0"/>
+        <line num="80" count="13" type="stmt"/>
+        <line num="85" count="39" type="cond" truecount="4" falsecount="0"/>
+        <line num="86" count="2" type="stmt"/>
+        <line num="91" count="37" type="stmt"/>
+        <line num="94" count="37" type="stmt"/>
+        <line num="95" count="148" type="cond" truecount="2" falsecount="0"/>
+        <line num="96" count="52" type="cond" truecount="2" falsecount="0"/>
+        <line num="97" count="13" type="stmt"/>
+        <line num="99" count="39" type="cond" truecount="4" falsecount="0"/>
+        <line num="100" count="2" type="stmt"/>
+        <line num="102" count="37" type="stmt"/>
+        <line num="105" count="37" type="stmt"/>
+        <line num="125" count="111" type="stmt"/>
+        <line num="151" count="148" type="stmt"/>
+        <line num="154" count="13" type="stmt"/>
+        <line num="206" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="src">
+      <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="theme.ts" path="/Users/Revan/IdeaProjects/memorize/app/src/theme.ts">
+        <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="11" type="stmt"/>
+        <line num="33" count="11" type="stmt"/>
+        <line num="43" count="11" type="stmt"/>
+        <line num="51" count="11" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.api">
+      <metrics statements="67" coveredstatements="59" conditionals="35" coveredconditionals="29" methods="12" coveredmethods="8"/>
+      <file name="auth.ts" path="/Users/Revan/IdeaProjects/memorize/app/src/api/auth.ts">
+        <metrics statements="14" coveredstatements="14" conditionals="2" coveredconditionals="2" methods="4" coveredmethods="4"/>
+        <line num="19" count="1" type="stmt"/>
+        <line num="21" count="2" type="stmt"/>
+        <line num="25" count="1" type="stmt"/>
+        <line num="26" count="1" type="stmt"/>
+        <line num="30" count="2" type="stmt"/>
+        <line num="34" count="1" type="stmt"/>
+        <line num="35" count="1" type="stmt"/>
+        <line num="39" count="3" type="stmt"/>
+        <line num="40" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="41" count="1" type="stmt"/>
+        <line num="44" count="2" type="stmt"/>
+        <line num="53" count="1" type="stmt"/>
+        <line num="54" count="1" type="stmt"/>
+        <line num="58" count="1" type="stmt"/>
+      </file>
+      <file name="client.ts" path="/Users/Revan/IdeaProjects/memorize/app/src/api/client.ts">
+        <metrics statements="53" coveredstatements="45" conditionals="33" coveredconditionals="27" methods="8" coveredmethods="4"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="21" count="1" type="stmt"/>
+        <line num="23" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="24" count="3" type="stmt"/>
+        <line num="25" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="26" count="0" type="stmt"/>
+        <line num="28" count="0" type="stmt"/>
+        <line num="31" count="3" type="stmt"/>
+        <line num="35" count="1" type="stmt"/>
+        <line num="37" count="17" type="stmt"/>
+        <line num="38" count="17" type="cond" truecount="2" falsecount="0"/>
+        <line num="39" count="5" type="stmt"/>
+        <line num="41" count="17" type="stmt"/>
+        <line num="43" count="0" type="stmt"/>
+        <line num="47" count="1" type="stmt"/>
+        <line num="48" count="4" type="stmt"/>
+        <line num="50" count="13" type="stmt"/>
+        <line num="55" count="13" type="cond" truecount="4" falsecount="0"/>
+        <line num="58" count="6" type="cond" truecount="1" falsecount="1"/>
+        <line num="59" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="60" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="61" count="1" type="stmt"/>
+        <line num="62" count="1" type="stmt"/>
+        <line num="64" count="3" type="stmt"/>
+        <line num="67" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="69" count="0" type="stmt"/>
+        <line num="70" count="0" type="stmt"/>
+        <line num="72" count="0" type="stmt"/>
+        <line num="73" count="0" type="stmt"/>
+        <line num="80" count="3" type="stmt"/>
+        <line num="81" count="3" type="stmt"/>
+        <line num="83" count="3" type="stmt"/>
+        <line num="84" count="3" type="stmt"/>
+        <line num="85" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="86" count="1" type="stmt"/>
+        <line num="89" count="2" type="stmt"/>
+        <line num="99" count="1" type="stmt"/>
+        <line num="100" count="1" type="stmt"/>
+        <line num="102" count="1" type="stmt"/>
+        <line num="104" count="1" type="stmt"/>
+        <line num="105" count="1" type="stmt"/>
+        <line num="107" count="2" type="stmt"/>
+        <line num="108" count="2" type="stmt"/>
+        <line num="109" count="2" type="stmt"/>
+        <line num="110" count="2" type="stmt"/>
+        <line num="112" count="3" type="stmt"/>
+        <line num="118" count="7" type="cond" truecount="1" falsecount="1"/>
+        <line num="119" count="7" type="cond" truecount="4" falsecount="0"/>
+        <line num="121" count="5" type="cond" truecount="4" falsecount="0"/>
+        <line num="125" count="5" type="stmt"/>
+        <line num="128" count="7" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.components.ui">
+      <metrics statements="21" coveredstatements="21" conditionals="43" coveredconditionals="35" methods="7" coveredmethods="7"/>
+      <file name="Button.tsx" path="/Users/Revan/IdeaProjects/memorize/app/src/components/ui/Button.tsx">
+        <metrics statements="4" coveredstatements="4" conditionals="21" coveredconditionals="13" methods="2" coveredmethods="2"/>
+        <line num="34" count="192" type="cond" truecount="2" falsecount="0"/>
+        <line num="36" count="192" type="stmt"/>
+        <line num="40" count="192" type="stmt"/>
+        <line num="73" count="4" type="stmt"/>
+      </file>
+      <file name="Input.tsx" path="/Users/Revan/IdeaProjects/memorize/app/src/components/ui/Input.tsx">
+        <metrics statements="7" coveredstatements="7" conditionals="15" coveredconditionals="15" methods="4" coveredmethods="4"/>
+        <line num="27" count="334" type="stmt"/>
+        <line num="28" count="334" type="stmt"/>
+        <line num="30" count="334" type="stmt"/>
+        <line num="44" count="2" type="stmt"/>
+        <line num="45" count="1" type="stmt"/>
+        <line num="51" count="3" type="stmt"/>
+        <line num="67" count="3" type="stmt"/>
+      </file>
+      <file name="WebContainer.tsx" path="/Users/Revan/IdeaProjects/memorize/app/src/components/ui/WebContainer.tsx">
+        <metrics statements="10" coveredstatements="10" conditionals="7" coveredconditionals="7" methods="1" coveredmethods="1"/>
+        <line num="5" count="1" type="stmt"/>
+        <line num="6" count="1" type="stmt"/>
+        <line num="14" count="6" type="stmt"/>
+        <line num="17" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="18" count="2" type="stmt"/>
+        <line num="21" count="4" type="stmt"/>
+        <line num="24" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="25" count="1" type="stmt"/>
+        <line num="29" count="3" type="stmt"/>
+        <line num="38" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.context">
+      <metrics statements="75" coveredstatements="74" conditionals="18" coveredconditionals="17" methods="29" coveredmethods="29"/>
+      <file name="AuthContext.tsx" path="/Users/Revan/IdeaProjects/memorize/app/src/context/AuthContext.tsx">
+        <metrics statements="41" coveredstatements="40" conditionals="10" coveredconditionals="10" methods="13" coveredmethods="13"/>
+        <line num="19" count="4" type="stmt"/>
+        <line num="22" count="152" type="stmt"/>
+        <line num="30" count="152" type="stmt"/>
+        <line num="31" count="61" type="stmt"/>
+        <line num="34" count="152" type="stmt"/>
+        <line num="35" count="61" type="stmt"/>
+        <line num="36" count="61" type="stmt"/>
+        <line num="37" count="61" type="cond" truecount="2" falsecount="0"/>
+        <line num="38" count="13" type="stmt"/>
+        <line num="39" count="13" type="stmt"/>
+        <line num="40" count="12" type="stmt"/>
+        <line num="42" count="1" type="stmt"/>
+        <line num="43" count="1" type="stmt"/>
+        <line num="46" count="48" type="stmt"/>
+        <line num="49" count="0" type="stmt"/>
+        <line num="53" count="152" type="stmt"/>
+        <line num="54" count="9" type="stmt"/>
+        <line num="55" count="9" type="stmt"/>
+        <line num="56" count="9" type="stmt"/>
+        <line num="57" count="3" type="stmt"/>
+        <line num="60" count="6" type="cond" truecount="3" falsecount="0"/>
+        <line num="63" count="6" type="stmt"/>
+        <line num="64" count="6" type="stmt"/>
+        <line num="68" count="152" type="stmt"/>
+        <line num="69" count="5" type="stmt"/>
+        <line num="70" count="5" type="stmt"/>
+        <line num="71" count="5" type="stmt"/>
+        <line num="72" count="2" type="stmt"/>
+        <line num="75" count="3" type="cond" truecount="3" falsecount="0"/>
+        <line num="78" count="3" type="stmt"/>
+        <line num="79" count="3" type="stmt"/>
+        <line num="83" count="152" type="stmt"/>
+        <line num="84" count="2" type="stmt"/>
+        <line num="85" count="2" type="stmt"/>
+        <line num="88" count="152" type="stmt"/>
+        <line num="89" count="19" type="stmt"/>
+        <line num="92" count="152" type="stmt"/>
+        <line num="102" count="184" type="stmt"/>
+        <line num="103" count="184" type="cond" truecount="2" falsecount="0"/>
+        <line num="104" count="2" type="stmt"/>
+        <line num="106" count="182" type="stmt"/>
+      </file>
+      <file name="ToastContext.tsx" path="/Users/Revan/IdeaProjects/memorize/app/src/context/ToastContext.tsx">
+        <metrics statements="34" coveredstatements="34" conditionals="8" coveredconditionals="7" methods="16" coveredmethods="16"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="18" count="1" type="stmt"/>
+        <line num="21" count="3" type="stmt"/>
+        <line num="24" count="1" type="stmt"/>
+        <line num="27" count="22" type="stmt"/>
+        <line num="28" count="22" type="stmt"/>
+        <line num="30" count="22" type="stmt"/>
+        <line num="31" count="12" type="stmt"/>
+        <line num="32" count="12" type="stmt"/>
+        <line num="33" count="12" type="stmt"/>
+        <line num="36" count="22" type="stmt"/>
+        <line num="38" count="12" type="stmt"/>
+        <line num="39" count="12" type="stmt"/>
+        <line num="40" count="12" type="stmt"/>
+        <line num="46" count="22" type="stmt"/>
+        <line num="47" count="11" type="stmt"/>
+        <line num="48" count="11" type="stmt"/>
+        <line num="49" count="11" type="stmt"/>
+        <line num="53" count="22" type="stmt"/>
+        <line num="62" count="19" type="stmt"/>
+        <line num="63" count="19" type="cond" truecount="2" falsecount="0"/>
+        <line num="64" count="17" type="stmt"/>
+        <line num="82" count="1" type="stmt"/>
+        <line num="96" count="11" type="stmt"/>
+        <line num="97" count="11" type="stmt"/>
+        <line num="99" count="11" type="stmt"/>
+        <line num="100" count="11" type="stmt"/>
+        <line num="106" count="11" type="stmt"/>
+        <line num="108" count="11" type="stmt"/>
+        <line num="121" count="1" type="stmt"/>
+        <line num="135" count="22" type="cond" truecount="2" falsecount="0"/>
+        <line num="136" count="9" type="stmt"/>
+        <line num="139" count="11" type="stmt"/>
+        <line num="145" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.storage">
+      <metrics statements="28" coveredstatements="28" conditionals="6" coveredconditionals="6" methods="10" coveredmethods="10"/>
+      <file name="tokenStorage.ts" path="/Users/Revan/IdeaProjects/memorize/app/src/storage/tokenStorage.ts">
+        <metrics statements="28" coveredstatements="28" conditionals="6" coveredconditionals="6" methods="10" coveredmethods="10"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="5" count="1" type="stmt"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="10" count="2" type="stmt"/>
+        <line num="11" count="2" type="stmt"/>
+        <line num="13" count="1" type="stmt"/>
+        <line num="17" count="2" type="stmt"/>
+        <line num="18" count="2" type="stmt"/>
+        <line num="22" count="2" type="stmt"/>
+        <line num="23" count="2" type="stmt"/>
+        <line num="29" count="7" type="cond" truecount="2" falsecount="0"/>
+        <line num="30" count="2" type="stmt"/>
+        <line num="32" count="5" type="stmt"/>
+        <line num="36" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="37" count="2" type="stmt"/>
+        <line num="38" count="2" type="stmt"/>
+        <line num="40" count="4" type="stmt"/>
+        <line num="44" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="45" count="2" type="stmt"/>
+        <line num="46" count="2" type="stmt"/>
+        <line num="48" count="2" type="stmt"/>
+        <line num="51" count="1" type="stmt"/>
+        <line num="52" count="5" type="stmt"/>
+        <line num="53" count="2" type="stmt"/>
+        <line num="56" count="3" type="stmt"/>
+        <line num="57" count="3" type="stmt"/>
+        <line num="61" count="2" type="stmt"/>
+        <line num="62" count="2" type="stmt"/>
+      </file>
+    </package>
+  </project>
+</coverage>
