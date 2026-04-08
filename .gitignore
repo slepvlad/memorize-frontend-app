@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+
+.claude
+.idea
+coverage
+dist
+node_modules
