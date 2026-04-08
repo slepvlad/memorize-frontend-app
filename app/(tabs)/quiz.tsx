@@ -1,62 +1,80 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { wordsApi, WordResponse } from '../../src/api/words';
 import { colors, spacing, radius } from '../../src/theme';
 
-interface Question {
-  word: string;
+interface QuizQuestion {
+  wordId: string;
+  term: string;
   options: string[];
   correctIndex: number;
 }
 
-const questions: Question[] = [
-  {
-    word: 'Ephemeral',
-    options: [
-      'Very important or significant',
-      'Lasting for a very short time',
-      'Extremely beautiful',
-      'Difficult to understand',
-    ],
-    correctIndex: 1,
-  },
-  {
-    word: 'Ubiquitous',
-    options: [
-      'Rarely seen or experienced',
-      'Having a strong smell',
-      'Found everywhere',
-      'Extremely expensive',
-    ],
-    correctIndex: 2,
-  },
-  {
-    word: 'Eloquent',
-    options: [
-      'Fluent or persuasive in speaking',
-      'Silent and withdrawn',
-      'Physically strong',
-      'Deeply mysterious',
-    ],
-    correctIndex: 0,
-  },
-];
+function buildQuestions(words: WordResponse[]): QuizQuestion[] {
+  if (words.length < 4) return [];
+
+  return words.map((word) => {
+    const distractors = words
+      .filter((w) => w.id !== word.id && w.definition)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map((w) => w.definition as string);
+
+    const correctDef = word.definition || word.term;
+    const allOptions = [...distractors, correctDef].sort(() => Math.random() - 0.5);
+    const correctIndex = allOptions.indexOf(correctDef);
+
+    return {
+      wordId: word.id,
+      term: word.term,
+      options: allOptions,
+      correctIndex,
+    };
+  });
+}
 
 export default function QuizScreen() {
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
 
-  const question = questions[currentQ];
+  const loadQuiz = useCallback(async () => {
+    setLoading(true);
+    try {
+      const page = await wordsApi.getAll(0, 100);
+      const qs = buildQuestions(page.content);
+      setQuestions(qs);
+      setCurrentQ(0);
+      setSelected(null);
+      setScore(0);
+      setAnswered(false);
+    } catch {
+      // error handled globally by axios interceptor (toast)
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleSelect = (index: number) => {
-    if (answered) return;
+  useEffect(() => {
+    void loadQuiz();
+  }, [loadQuiz]);
+
+  const handleSelect = async (index: number) => {
+    if (answered || questions.length === 0) return;
+    const q = questions[currentQ];
+    const correct = index === q.correctIndex;
     setSelected(index);
     setAnswered(true);
-    if (index === question.correctIndex) {
-      setScore(score + 1);
+    if (correct) setScore((s) => s + 1);
+    try {
+      await wordsApi.review(q.wordId, correct);
+    } catch {
+      // review errors are handled globally by the axios interceptor
     }
   };
 
@@ -66,41 +84,56 @@ export default function QuizScreen() {
       setSelected(null);
       setAnswered(false);
     } else {
-      // Reset quiz
-      setCurrentQ(0);
-      setSelected(null);
-      setAnswered(false);
-      setScore(0);
+      void loadQuiz();
     }
   };
 
   const getOptionStyle = (index: number) => {
     if (!answered) return {};
-    if (index === question.correctIndex) {
-      return {
-        borderColor: colors.success,
-        backgroundColor: colors.successLight,
-      };
+    const q = questions[currentQ];
+    if (index === q.correctIndex) {
+      return { borderColor: colors.success, backgroundColor: colors.successLight };
     }
-    if (index === selected && index !== question.correctIndex) {
-      return {
-        borderColor: colors.danger,
-        backgroundColor: colors.dangerLight,
-      };
+    if (index === selected && index !== q.correctIndex) {
+      return { borderColor: colors.danger, backgroundColor: colors.dangerLight };
     }
     return {};
   };
 
   const getCircleStyle = (index: number) => {
     if (!answered) return {};
-    if (index === question.correctIndex) {
+    const q = questions[currentQ];
+    if (index === q.correctIndex) {
       return { borderColor: colors.success, backgroundColor: colors.success };
     }
-    if (index === selected && index !== question.correctIndex) {
+    if (index === selected && index !== q.correctIndex) {
       return { borderColor: colors.danger, backgroundColor: colors.danger };
     }
     return {};
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.emptyTitle}>Not enough words</Text>
+          <Text style={styles.emptySubtitle}>Add at least 4 words with definitions to start a quiz.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const question = questions[currentQ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -142,7 +175,7 @@ export default function QuizScreen() {
         {/* Question */}
         <View style={styles.questionArea}>
           <Text style={styles.questionLabel}>What does this word mean?</Text>
-          <Text style={styles.questionWord}>{question.word}</Text>
+          <Text style={styles.questionWord}>{question.term}</Text>
         </View>
 
         {/* Options */}
@@ -207,6 +240,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   scrollContent: {
     paddingHorizontal: spacing.xxl,
