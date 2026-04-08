@@ -1,49 +1,71 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { wordsApi, WordResponse } from '../../src/api/words';
 import { colors, spacing, radius } from '../../src/theme';
 
-const sampleCards = [
-  {
-    word: 'Serendipity',
-    type: 'Noun',
-    pronunciation: '/ˌser.ənˈdɪp.ə.t̬i/',
-    definition: 'The occurrence of events by chance in a happy way',
-    example: '"It was pure serendipity that we met at the café."',
-  },
-  {
-    word: 'Ephemeral',
-    type: 'Adjective',
-    pronunciation: '/ɪˈfem.ər.əl/',
-    definition: 'Lasting for a very short time',
-    example: '"The ephemeral beauty of cherry blossoms."',
-  },
-  {
-    word: 'Eloquent',
-    type: 'Adjective',
-    pronunciation: '/ˈel.ə.kwənt/',
-    definition: 'Fluent or persuasive in speaking or writing',
-    example: '"She gave an eloquent speech at the ceremony."',
-  },
-];
-
 export default function LearnScreen() {
+  const [words, setWords] = useState<WordResponse[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reviewing, setReviewing] = useState(false);
 
-  const card = sampleCards[currentIndex];
-  const progress = (currentIndex + 1) / sampleCards.length;
+  const loadWords = useCallback(async () => {
+    setLoading(true);
+    try {
+      const page = await wordsApi.getAll(0, 100);
+      setWords(page.content);
+      setCurrentIndex(0);
+      setIsFlipped(false);
+    } catch {
+      // error handled globally by axios interceptor (toast)
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadWords();
+  }, [loadWords]);
 
   const handleFlip = () => setIsFlipped(!isFlipped);
 
-  const handleNext = (_difficulty: string) => {
-    setIsFlipped(false);
-    if (currentIndex < sampleCards.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      setCurrentIndex(0);
+  const handleReview = async (correct: boolean) => {
+    if (reviewing || words.length === 0) return;
+    const card = words[currentIndex];
+    setReviewing(true);
+    try {
+      await wordsApi.review(card.id, correct);
+    } finally {
+      setReviewing(false);
+      setIsFlipped(false);
+      setCurrentIndex((prev) => (prev < words.length - 1 ? prev + 1 : 0));
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (words.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.emptyTitle}>No words yet</Text>
+          <Text style={styles.emptySubtitle}>Add words from the Home tab to start learning.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const card = words[currentIndex];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,21 +74,18 @@ export default function LearnScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Learn</Text>
           <Text style={styles.counter}>
-            {currentIndex + 1} of {sampleCards.length}
+            {currentIndex + 1} of {words.length}
           </Text>
         </View>
 
         {/* Progress bar */}
         <View style={styles.progressTrack}>
-          {sampleCards.map((_, i) => (
+          {words.map((_, i) => (
             <View
               key={i}
               style={[
                 styles.progressSegment,
-                {
-                  backgroundColor:
-                    i <= currentIndex ? colors.primary : colors.border,
-                },
+                { backgroundColor: i <= currentIndex ? colors.primary : colors.border },
               ]}
             />
           ))}
@@ -81,21 +100,19 @@ export default function LearnScreen() {
           {!isFlipped ? (
             <View style={styles.cardFront}>
               <View style={[styles.pill, { backgroundColor: colors.infoLight }]}>
-                <Text style={[styles.pillText, { color: colors.info }]}>{card.type}</Text>
+                <Text style={[styles.pillText, { color: colors.info }]}>Term</Text>
               </View>
-              <Text style={styles.wordText}>{card.word}</Text>
-              <Text style={styles.pronunciation}>{card.pronunciation}</Text>
-              <Text style={styles.flipHint}>Tap to reveal meaning</Text>
+              <Text style={styles.wordText}>{card.term}</Text>
+              <Text style={styles.flipHint}>Tap to reveal definition</Text>
             </View>
           ) : (
             <View style={styles.cardBack}>
               <View style={[styles.pill, { backgroundColor: colors.successLight }]}>
                 <Text style={[styles.pillText, { color: colors.success }]}>Definition</Text>
               </View>
-              <Text style={styles.definition}>{card.definition}</Text>
-              <View style={styles.exampleBox}>
-                <Text style={styles.exampleText}>{card.example}</Text>
-              </View>
+              <Text style={styles.definition}>
+                {card.definition || 'No definition provided.'}
+              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -104,19 +121,22 @@ export default function LearnScreen() {
         <View style={styles.difficultyRow}>
           <TouchableOpacity
             style={styles.diffButton}
-            onPress={() => handleNext('hard')}
+            onPress={() => handleReview(false)}
+            disabled={reviewing}
           >
             <Text style={[styles.diffText, { color: colors.danger }]}>Hard</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.diffButton}
-            onPress={() => handleNext('good')}
+            onPress={() => handleReview(true)}
+            disabled={reviewing}
           >
             <Text style={[styles.diffText, { color: colors.warning }]}>Good</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.diffButton}
-            onPress={() => handleNext('easy')}
+            onPress={() => handleReview(true)}
+            disabled={reviewing}
           >
             <Text style={[styles.diffText, { color: colors.success }]}>Easy</Text>
           </TouchableOpacity>
@@ -130,6 +150,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   content: {
     flex: 1,
@@ -197,10 +234,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     letterSpacing: -0.5,
     marginTop: 8,
-  },
-  pronunciation: {
-    fontSize: 14,
-    color: colors.textTertiary,
+    textAlign: 'center',
   },
   flipHint: {
     fontSize: 13,
@@ -213,21 +247,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
     lineHeight: 26,
-  },
-  exampleBox: {
-    backgroundColor: colors.background,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: 14,
-    marginTop: 8,
-  },
-  exampleText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    lineHeight: 20,
   },
   difficultyRow: {
     flexDirection: 'row',

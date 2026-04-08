@@ -5,7 +5,10 @@
       "Bash(ls:*)",
       "Bash(npx tsc:*)",
       "Bash(npm install:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(ls \"/Users/Revan/IdeaProjects/memorize/app/app/\\(tabs\\)\")",
+      "Bash(ls \"/Users/Revan/IdeaProjects/memorize/app/app/\\(auth\\)\")",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }
