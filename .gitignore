@@ -46,3 +46,4 @@ yarn-error.*
 coverage
 dist
 node_modules
+/CLAUDE.md

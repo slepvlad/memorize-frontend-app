@@ -12,27 +12,38 @@ interface QuizQuestion {
   correctIndex: number;
 }
 
-function buildQuestions(words: WordResponse[]): QuizQuestion[] {
-  if (words.length < 4) return [];
+interface QuizResult {
+  wordId: string;
+  term: string;
+  correct: boolean;
+}
 
-  return words.map((word) => {
-    const distractors = words
-      .filter((w) => w.id !== word.id && w.definition)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3)
-      .map((w) => w.definition as string);
+function getDueWords(words: WordResponse[]): WordResponse[] {
+  const now = new Date();
+  return words.filter((w) => new Date(w.next_review_date) <= now);
+}
 
-    const correctDef = word.definition || word.term;
-    const allOptions = [...distractors, correctDef].sort(() => Math.random() - 0.5);
-    const correctIndex = allOptions.indexOf(correctDef);
+function buildQuestions(dueWords: WordResponse[], allWords: WordResponse[]): QuizQuestion[] {
+  return dueWords
+    .filter((w) => w.definition)
+    .map((word) => {
+      const distractors = allWords
+        .filter((w) => w.id !== word.id && w.definition)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map((w) => w.definition as string);
 
-    return {
-      wordId: word.id,
-      term: word.term,
-      options: allOptions,
-      correctIndex,
-    };
-  });
+      const correctDef = word.definition as string;
+      const allOptions = [...distractors, correctDef].sort(() => Math.random() - 0.5);
+      const correctIndex = allOptions.indexOf(correctDef);
+
+      return {
+        wordId: word.id,
+        term: word.term,
+        options: allOptions,
+        correctIndex,
+      };
+    });
 }
 
 export default function QuizScreen() {
@@ -40,21 +51,29 @@ export default function QuizScreen() {
   const [loading, setLoading] = useState(true);
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
-  const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
+  const [results, setResults] = useState<QuizResult[]>([]);
+  const [finished, setFinished] = useState(false);
+  const [dueCount, setDueCount] = useState(0);
 
   const loadQuiz = useCallback(async () => {
     setLoading(true);
     try {
-      const page = await wordsApi.getAll(0, 100);
-      const qs = buildQuestions(page.content);
+      const page = await wordsApi.getAll(0, 200);
+      const all = page.content;
+      const due = getDueWords(all);
+      setDueCount(due.length);
+
+      // Need at least 4 words total for distractors, and at least 1 due word with a definition
+      const qs = all.length >= 4 ? buildQuestions(due, all) : [];
       setQuestions(qs);
       setCurrentQ(0);
       setSelected(null);
-      setScore(0);
+      setResults([]);
+      setFinished(false);
       setAnswered(false);
     } catch {
-      // error handled globally by axios interceptor (toast)
+      // errors handled globally by axios interceptor (toast)
     } finally {
       setLoading(false);
     }
@@ -70,11 +89,11 @@ export default function QuizScreen() {
     const correct = index === q.correctIndex;
     setSelected(index);
     setAnswered(true);
-    if (correct) setScore((s) => s + 1);
+    setResults((prev) => [...prev, { wordId: q.wordId, term: q.term, correct }]);
     try {
       await wordsApi.review(q.wordId, correct);
     } catch {
-      // review errors are handled globally by the axios interceptor
+      // review errors are handled globally
     }
   };
 
@@ -84,7 +103,7 @@ export default function QuizScreen() {
       setSelected(null);
       setAnswered(false);
     } else {
-      void loadQuiz();
+      setFinished(true);
     }
   };
 
@@ -123,12 +142,80 @@ export default function QuizScreen() {
   }
 
   if (questions.length === 0) {
+    const isEmpty = dueCount === 0;
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>Not enough words</Text>
-          <Text style={styles.emptySubtitle}>Add at least 4 words with definitions to start a quiz.</Text>
+          <View style={styles.emptyIcon}>
+            <Ionicons
+              name={isEmpty ? 'checkmark-done-circle-outline' : 'library-outline'}
+              size={48}
+              color={isEmpty ? colors.success : colors.textTertiary}
+            />
+          </View>
+          <Text style={styles.emptyTitle}>
+            {isEmpty ? 'All caught up!' : 'Not enough words'}
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            {isEmpty
+              ? 'No words are due for review right now. Come back later.'
+              : 'Add at least 4 words with definitions to start a quiz.'}
+          </Text>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Results screen
+  if (finished) {
+    const score = results.filter((r) => r.correct).length;
+    const total = results.length;
+    const pct = Math.round((score / total) * 100);
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Results</Text>
+          </View>
+
+          <View style={styles.resultsSummary}>
+            <Text style={styles.resultsScore}>{score}/{total}</Text>
+            <Text style={styles.resultsPct}>{pct}% correct</Text>
+            <View
+              style={[
+                styles.resultsBadge,
+                { backgroundColor: pct >= 70 ? colors.successLight : colors.warningLight },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.resultsBadgeText,
+                  { color: pct >= 70 ? colors.success : colors.warning },
+                ]}
+              >
+                {pct >= 90 ? 'Excellent!' : pct >= 70 ? 'Good job!' : 'Keep practicing'}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.sectionLabel}>Review breakdown</Text>
+          {results.map((r, i) => (
+            <View key={i} style={styles.resultRow}>
+              <Ionicons
+                name={r.correct ? 'checkmark-circle' : 'close-circle'}
+                size={20}
+                color={r.correct ? colors.success : colors.danger}
+              />
+              <Text style={styles.resultTerm}>{r.term}</Text>
+            </View>
+          ))}
+
+          <TouchableOpacity style={styles.nextButton} onPress={loadQuiz}>
+            <Text style={styles.nextButtonText}>New session</Text>
+            <Ionicons name="refresh" size={18} color={colors.textInverse} />
+          </TouchableOpacity>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -143,7 +230,7 @@ export default function QuizScreen() {
           <Text style={styles.headerTitle}>Quiz</Text>
           <View style={styles.scoreBadge}>
             <Text style={styles.scoreText}>
-              {score}/{currentQ + (answered ? 1 : 0)}
+              {results.filter((r) => r.correct).length}/{results.length > 0 ? results.length : 0}
             </Text>
           </View>
         </View>
@@ -162,7 +249,9 @@ export default function QuizScreen() {
                 {
                   backgroundColor:
                     i < currentQ
-                      ? colors.success
+                      ? results[i]?.correct
+                        ? colors.success
+                        : colors.danger
                       : i === currentQ
                       ? colors.primary
                       : colors.border,
@@ -226,7 +315,7 @@ export default function QuizScreen() {
         {answered && (
           <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
             <Text style={styles.nextButtonText}>
-              {currentQ < questions.length - 1 ? 'Next question' : 'Restart quiz'}
+              {currentQ < questions.length - 1 ? 'Next question' : 'See results'}
             </Text>
             <Ionicons name="arrow-forward" size={18} color={colors.textInverse} />
           </TouchableOpacity>
@@ -246,6 +335,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl,
+  },
+  emptyIcon: {
+    marginBottom: spacing.lg,
   },
   emptyTitle: {
     fontSize: 18,
@@ -361,5 +453,52 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.textInverse,
+  },
+  // Results screen
+  resultsSummary: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxxl,
+    gap: spacing.md,
+  },
+  resultsScore: {
+    fontSize: 56,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -1,
+  },
+  resultsPct: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  resultsBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    marginTop: spacing.sm,
+  },
+  resultsBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  resultTerm: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.text,
   },
 });
