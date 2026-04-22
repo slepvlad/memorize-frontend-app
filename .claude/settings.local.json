@@ -8,7 +8,11 @@
       "Bash(npx jest:*)",
       "Bash(ls \"/Users/Revan/IdeaProjects/memorize/app/app/\\(tabs\\)\")",
       "Bash(ls \"/Users/Revan/IdeaProjects/memorize/app/app/\\(auth\\)\")",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(curl -s http://localhost:8080/v3/api-docs)",
+      "Bash(curl -s http://localhost:8080/api-docs)",
+      "Bash(wc -l /Users/Revan/IdeaProjects/memorize/app/__tests__/**/*.test.tsx)",
+      "Skill(update-config)"
     ]
   }
 }
