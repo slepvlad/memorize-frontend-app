@@ -4,25 +4,34 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View, Platform } from 'react-native';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ToastProvider } from '../src/context/ToastContext';
+import { LanguageProvider, useLanguage } from '../src/context/LanguageContext';
 import { WebContainer } from '../src/components/ui/WebContainer';
 import { colors } from '../src/theme';
 
 function RootLayoutNav() {
-  const { isAuthenticated, isInitializing } = useAuth();
+  const { isAuthenticated, isInitializing: authInitializing } = useAuth();
+  const { isConfigured, isInitializing: langInitializing } = useLanguage();
   const segments = useSegments();
   const router = useRouter();
+
+  const isInitializing = authInitializing || langInitializing;
 
   useEffect(() => {
     if (isInitializing) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inOnboarding = segments[0] === '(onboarding)';
 
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)');
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
+    if (!isAuthenticated) {
+      if (!inAuthGroup) router.replace('/(auth)');
+    } else if (!isConfigured) {
+      // Not yet configured — must complete onboarding before using the app
+      if (!inOnboarding) router.replace('/(onboarding)/language-setup');
+    } else {
+      // Configured — redirect away from auth; allow onboarding (for re-configuration)
+      if (inAuthGroup) router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isInitializing, segments]);
+  }, [isAuthenticated, isConfigured, isInitializing, segments]);
 
   // Inject global web styles to remove default browser margins/scrollbars
   useEffect(() => {
@@ -68,6 +77,7 @@ function RootLayoutNav() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
     </WebContainer>
@@ -78,7 +88,9 @@ export default function RootLayout() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <LanguageProvider>
+          <RootLayoutNav />
+        </LanguageProvider>
       </AuthProvider>
     </ToastProvider>
   );

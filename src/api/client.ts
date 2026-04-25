@@ -1,9 +1,14 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import Constants from 'expo-constants';
 import { tokenStorage } from '../storage/tokenStorage';
 import { triggerToast } from '../context/ToastContext';
 
-// ⚠️ Change this to your actual backend URL
-export const API_BASE_URL = 'http://localhost:8080';
+// On a real device the Expo dev server host gives us the machine's LAN IP.
+// e.g. Constants.expoConfig.hostUri === "192.168.1.5:8081" → backend at :8080
+const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+export const API_BASE_URL = devHost
+  ? `http://${devHost}:8080`
+  : 'http://localhost:8080';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

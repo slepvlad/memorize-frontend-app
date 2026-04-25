@@ -15,12 +15,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
 import { wordsApi, WordResponse } from '../../src/api/words';
 import { colors, spacing, radius } from '../../src/theme';
 
 export default function HomeScreen() {
   const { logout } = useAuth();
+  const { nativeLanguage, studiedLanguage } = useLanguage();
   const router = useRouter();
+
+  const studiedLang = SUPPORTED_LANGUAGES.find((l) => l.code === studiedLanguage);
+  const nativeLang = SUPPORTED_LANGUAGES.find((l) => l.code === nativeLanguage);
 
   const [recentWords, setRecentWords] = useState<WordResponse[]>([]);
   const [totalWords, setTotalWords] = useState(0);
@@ -74,9 +79,22 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Good morning</Text>
             <Text style={styles.name}>Learner</Text>
           </View>
-          <TouchableOpacity onPress={logout} style={styles.avatar}>
-            <Text style={styles.avatarText}>L</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {studiedLang && nativeLang && (
+              <TouchableOpacity
+                style={styles.langBadge}
+                onPress={() => router.push('/(onboarding)/language-setup')}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.langBadgeText}>
+                  {nativeLang.flag} → {studiedLang.flag}
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={logout} style={styles.avatar}>
+              <Text style={styles.avatarText}>L</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Stats Card */}
@@ -247,6 +265,24 @@ const styles = StyleSheet.create({
     color: colors.text,
     letterSpacing: -0.3,
     marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  langBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  langBadgeText: {
+    fontSize: 14,
   },
   avatar: {
     width: 42,

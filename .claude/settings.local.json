@@ -12,7 +12,9 @@
       "Bash(curl -s http://localhost:8080/v3/api-docs)",
       "Bash(curl -s http://localhost:8080/api-docs)",
       "Bash(wc -l /Users/Revan/IdeaProjects/memorize/app/__tests__/**/*.test.tsx)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(node:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
