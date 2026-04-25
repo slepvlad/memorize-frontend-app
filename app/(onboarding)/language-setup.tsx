@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  Modal,
+  Pressable,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,42 +57,27 @@ export default function LanguageSetupScreen() {
           This helps us tailor your learning experience
         </Text>
 
-        <Section label="My native language">
-          {SUPPORTED_LANGUAGES.map((lang) => (
-            <LanguageOption
-              key={lang.code}
-              flag={lang.flag}
-              name={lang.name}
-              selected={nativeLanguage === lang.code}
-              disabled={studiedLanguage === lang.code}
-              onPress={() => setNativeLanguage(lang.code)}
+        <View style={styles.fields}>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>My native language</Text>
+            <LanguageDropdown
+              value={nativeLanguage}
+              disabledOption={studiedLanguage}
+              placeholder="Select language"
+              onChange={setNativeLanguage}
             />
-          ))}
-        </Section>
+          </View>
 
-        <Section label="Language I want to learn">
-          {SUPPORTED_LANGUAGES.map((lang) => (
-            <LanguageOption
-              key={lang.code}
-              flag={lang.flag}
-              name={lang.name}
-              selected={studiedLanguage === lang.code}
-              disabled={nativeLanguage === lang.code}
-              onPress={() => setStudiedLanguage(lang.code)}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Language I want to learn</Text>
+            <LanguageDropdown
+              value={studiedLanguage}
+              disabledOption={nativeLanguage}
+              placeholder="Select language"
+              onChange={setStudiedLanguage}
             />
-          ))}
-        </Section>
-
-        {nativeLanguage !== null &&
-          studiedLanguage !== null &&
-          nativeLanguage === studiedLanguage && (
-            <View style={styles.warningBanner}>
-              <Ionicons name="alert-circle-outline" size={16} color={colors.warning} />
-              <Text style={styles.warningText}>
-                Native and studied languages must be different
-              </Text>
-            </View>
-          )}
+          </View>
+        </View>
       </View>
 
       <View style={styles.footer}>
@@ -106,64 +99,83 @@ export default function LanguageSetupScreen() {
   );
 }
 
-function Section({
-  label,
-  children,
+function LanguageDropdown({
+  value,
+  disabledOption,
+  placeholder,
+  onChange,
 }: {
-  label: string;
-  children: React.ReactNode;
+  value: Language | null;
+  disabledOption: Language | null;
+  placeholder: string;
+  onChange: (lang: Language) => void;
 }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      <View style={styles.optionRow}>{children}</View>
-    </View>
-  );
-}
+  const [open, setOpen] = useState(false);
+  const selected = SUPPORTED_LANGUAGES.find((l) => l.code === value);
 
-function LanguageOption({
-  flag,
-  name,
-  selected,
-  disabled,
-  onPress,
-}: {
-  flag: string;
-  name: string;
-  selected: boolean;
-  disabled: boolean;
-  onPress: () => void;
-}) {
   return (
-    <TouchableOpacity
-      style={[
-        styles.option,
-        selected && styles.optionSelected,
-        disabled && styles.optionDisabled,
-      ]}
-      onPress={onPress}
-      disabled={disabled}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.flag}>{flag}</Text>
-      <Text
-        style={[
-          styles.optionName,
-          selected && styles.optionNameSelected,
-          disabled && styles.optionNameDisabled,
-        ]}
+    <>
+      <TouchableOpacity
+        style={[styles.trigger, open && styles.triggerOpen]}
+        onPress={() => setOpen(true)}
+        activeOpacity={0.8}
       >
-        {name}
-      </Text>
-      {selected && (
+        {selected ? (
+          <View style={styles.triggerValue}>
+            <Text style={styles.triggerFlag}>{selected.flag}</Text>
+            <Text style={styles.triggerText}>{selected.name}</Text>
+          </View>
+        ) : (
+          <Text style={styles.triggerPlaceholder}>{placeholder}</Text>
+        )}
         <Ionicons
-          name="checkmark-circle"
+          name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={colors.primary}
-          style={styles.checkIcon}
+          color={colors.textSecondary}
         />
-      )}
-    </TouchableOpacity>
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.sheetHandle} />
+            {SUPPORTED_LANGUAGES.map((lang, index) => {
+              const isSelected = value === lang.code;
+              const isDisabled = disabledOption === lang.code;
+              return (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.item,
+                    index < SUPPORTED_LANGUAGES.length - 1 && styles.itemBorder,
+                    isDisabled && styles.itemDisabled,
+                  ]}
+                  onPress={() => {
+                    if (!isDisabled) {
+                      onChange(lang.code);
+                      setOpen(false);
+                    }
+                  }}
+                  disabled={isDisabled}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.itemFlag}>{lang.flag}</Text>
+                  <Text style={[styles.itemName, isDisabled && styles.itemNameDisabled]}>
+                    {lang.name}
+                  </Text>
+                  {isDisabled && (
+                    <Text style={styles.itemHint}>Already selected</Text>
+                  )}
+                  {isSelected && !isDisabled && (
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -208,25 +220,22 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.xxxl,
   },
-  section: {
-    marginBottom: spacing.xxl,
+  fields: {
+    gap: spacing.xl,
   },
-  sectionLabel: {
+  field: {
+    gap: spacing.sm,
+  },
+  fieldLabel: {
     ...typography.label,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  optionRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  option: {
-    flex: 1,
+  // Trigger (closed state)
+  trigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
     paddingVertical: 14,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.lg,
@@ -234,46 +243,80 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  optionSelected: {
+  triggerOpen: {
     borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
   },
-  optionDisabled: {
-    opacity: 0.35,
+  triggerValue: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  flag: {
+  triggerFlag: {
+    fontSize: 22,
+  },
+  triggerText: {
+    ...typography.body,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  triggerPlaceholder: {
+    ...typography.body,
+    color: colors.textTertiary,
+    flex: 1,
+  },
+  // Modal
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.md,
+    paddingBottom: Platform.OS === 'web' ? spacing.xxl : 40,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
+  },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: spacing.md,
+  },
+  itemBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  itemDisabled: {
+    opacity: 0.4,
+  },
+  itemFlag: {
     fontSize: 24,
   },
-  optionName: {
+  itemName: {
     ...typography.body,
     fontWeight: '500',
     color: colors.text,
     flex: 1,
   },
-  optionNameSelected: {
-    color: colors.primaryDark,
-    fontWeight: '600',
-  },
-  optionNameDisabled: {
+  itemNameDisabled: {
     color: colors.textTertiary,
   },
-  checkIcon: {
-    marginLeft: 'auto',
+  itemHint: {
+    ...typography.caption,
+    color: colors.textTertiary,
   },
-  warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.warningLight,
-    paddingVertical: 10,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-  },
-  warningText: {
-    ...typography.bodySmall,
-    color: colors.warning,
-    flex: 1,
-  },
+  // Footer
   footer: {
     paddingBottom: Platform.OS === 'web' ? 20 : spacing.lg,
   },
