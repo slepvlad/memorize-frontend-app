@@ -16,6 +16,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { wordsApi, WordResponse } from '../../src/api/words';
+import { dictionaryApi, translationApi } from '../../src/api/dictionary';
+import { useLanguage } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
 
 const PAGE_SIZE = 20;
@@ -36,6 +38,9 @@ export default function VocabularyScreen() {
   const [term, setTerm] = useState('');
   const [definition, setDefinition] = useState('');
   const [saving, setSaving] = useState(false);
+  const [lookingUpDefinition, setLookingUpDefinition] = useState(false);
+
+  const { nativeLanguage, studiedLanguage } = useLanguage();
 
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     try {
@@ -93,6 +98,33 @@ export default function VocabularyScreen() {
     setTerm('');
     setDefinition('');
     setEditingWord(null);
+    setLookingUpDefinition(false);
+  };
+
+  const lookupAndPrefillDefinition = async (termValue: string) => {
+    const trimmed = termValue.trim();
+    if (!trimmed || modalMode !== 'create') return;
+    setLookingUpDefinition(true);
+    try {
+      const entry = await dictionaryApi.lookup(trimmed);
+      const firstDef = entry.meanings?.[0]?.definitions?.[0]?.definition ?? '';
+      if (firstDef) {
+        let text = firstDef;
+        if (studiedLanguage && nativeLanguage && studiedLanguage !== nativeLanguage) {
+          const result = await translationApi.translate({
+            text: firstDef,
+            source: studiedLanguage,
+            target: nativeLanguage,
+          });
+          text = result.translated_text;
+        }
+        setDefinition(prev => (prev.trim() === '' ? text : prev));
+      }
+    } catch {
+      // silently ignore lookup or translation failures
+    } finally {
+      setLookingUpDefinition(false);
+    }
   };
 
   const handleSave = async () => {
@@ -278,9 +310,17 @@ export default function VocabularyScreen() {
               placeholderTextColor={colors.textTertiary}
               value={term}
               onChangeText={setTerm}
+              onBlur={() => void lookupAndPrefillDefinition(term)}
               autoCapitalize="none"
               autoCorrect={false}
             />
+
+            {lookingUpDefinition && (
+              <View style={styles.lookupRow}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.lookupText}>Looking up definition…</Text>
+              </View>
+            )}
 
             <Text style={styles.fieldLabel}>Definition</Text>
             <TextInput
@@ -474,6 +514,16 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     opacity: 0.5,
+  },
+  lookupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  lookupText: {
+    fontSize: 12,
+    color: colors.textTertiary,
   },
   saveButtonText: {
     fontSize: 16,

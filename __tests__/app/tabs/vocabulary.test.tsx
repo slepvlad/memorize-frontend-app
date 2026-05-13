@@ -3,6 +3,8 @@ import { Alert } from 'react-native';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import VocabularyScreen from '../../../app/(tabs)/vocabulary';
 import { wordsApi } from '../../../src/api/words';
+import { dictionaryApi, translationApi } from '../../../src/api/dictionary';
+import { useLanguage } from '../../../src/context/LanguageContext';
 
 jest.mock('../../../src/api/words', () => ({
   wordsApi: {
@@ -13,10 +15,22 @@ jest.mock('../../../src/api/words', () => ({
   },
 }));
 
+jest.mock('../../../src/api/dictionary', () => ({
+  dictionaryApi: { lookup: jest.fn() },
+  translationApi: { translate: jest.fn() },
+}));
+
+jest.mock('../../../src/context/LanguageContext', () => ({
+  useLanguage: jest.fn(),
+}));
+
 const mockGetAll = wordsApi.getAll as jest.Mock;
 const mockCreate = wordsApi.create as jest.Mock;
 const mockUpdate = wordsApi.update as jest.Mock;
 const mockDelete = wordsApi.delete as jest.Mock;
+const mockLookup = dictionaryApi.lookup as jest.Mock;
+const mockTranslate = translationApi.translate as jest.Mock;
+const mockUseLanguage = useLanguage as jest.Mock;
 
 const makeWord = (
   id: string,
@@ -55,6 +69,31 @@ beforeEach(() => {
   mockCreate.mockResolvedValue(makeWord('99', 'Serendipity', 'Happy chance'));
   mockUpdate.mockResolvedValue(makeWord('1', 'Ephemeral Updated', 'Short-lived'));
   mockDelete.mockResolvedValue(undefined);
+  mockLookup.mockResolvedValue({
+    word: 'serendipity',
+    meanings: [
+      {
+        part_of_speech: 'noun',
+        definitions: [{ definition: 'Happy chance', example: '', synonyms: [], antonyms: [] }],
+        synonyms: [],
+        antonyms: [],
+      },
+    ],
+  });
+  mockTranslate.mockResolvedValue({
+    source: 'en',
+    target: 'ru',
+    original_text: 'Happy chance',
+    translated_text: 'Счастливая случайность',
+  });
+  mockUseLanguage.mockReturnValue({
+    nativeLanguage: 'ru',
+    studiedLanguage: 'en',
+    isConfigured: true,
+    isInitializing: false,
+    setLanguages: jest.fn(),
+    clearLanguages: jest.fn(),
+  });
   jest.spyOn(Alert, 'alert');
 });
 
@@ -480,5 +519,186 @@ describe('VocabularyScreen — delete word', () => {
     });
 
     await waitFor(() => expect(screen.getByText('1 word')).toBeTruthy());
+  });
+});
+
+// ─── Definition Lookup ────────────────────────────────────────────────────────
+
+describe('VocabularyScreen — definition lookup', () => {
+  const openModal = async () => {
+    render(<VocabularyScreen />);
+    await waitFor(() => screen.getByText('Vocabulary'));
+    fireEvent.press(screen.getByLabelText('Add word'));
+  };
+
+  it('calls dictionaryApi.lookup when term input loses focus', async () => {
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() => expect(mockLookup).toHaveBeenCalledWith('Serendipity'));
+  });
+
+  it('trims term before passing to lookup', async () => {
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), '  Serendipity  ');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() => expect(mockLookup).toHaveBeenCalledWith('Serendipity'));
+  });
+
+  it('prefills definition with translated text after lookup', async () => {
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
+      ).toBe('Счастливая случайность')
+    );
+  });
+
+  it('calls translationApi.translate with first definition and correct languages', async () => {
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() =>
+      expect(mockTranslate).toHaveBeenCalledWith({
+        text: 'Happy chance',
+        source: 'en',
+        target: 'ru',
+      })
+    );
+  });
+
+  it('uses definition as-is when native and studied languages match', async () => {
+    mockUseLanguage.mockReturnValue({
+      nativeLanguage: 'en',
+      studiedLanguage: 'en',
+      isConfigured: true,
+      isInitializing: false,
+      setLanguages: jest.fn(),
+      clearLanguages: jest.fn(),
+    });
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
+      ).toBe('Happy chance')
+    );
+    expect(mockTranslate).not.toHaveBeenCalled();
+  });
+
+  it('does not call lookup in edit mode', async () => {
+    render(<VocabularyScreen />);
+    await waitFor(() => screen.getByText('Ephemeral'));
+    fireEvent.press(screen.getByLabelText('Edit Ephemeral'));
+    await act(async () => {
+      fireEvent(screen.getByDisplayValue('Ephemeral'), 'blur');
+    });
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
+  it('does not call lookup when term is empty on blur', async () => {
+    await openModal();
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
+  it('does not overwrite definition user typed before blur', async () => {
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('e.g. Lasting for a very short time'),
+      'My own definition'
+    );
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() => expect(mockLookup).toHaveBeenCalled());
+    expect(
+      screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
+    ).toBe('My own definition');
+  });
+
+  it('silently handles lookup API failure', async () => {
+    mockLookup.mockRejectedValueOnce(new Error('Not found'));
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Unknownword');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() => expect(mockLookup).toHaveBeenCalled());
+    expect(
+      screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
+    ).toBe('');
+  });
+
+  it('silently handles translation failure', async () => {
+    mockTranslate.mockRejectedValueOnce(new Error('Translation failed'));
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() => expect(mockTranslate).toHaveBeenCalled());
+    expect(
+      screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
+    ).toBe('');
+  });
+
+  it('shows loading indicator while lookup is in progress', async () => {
+    mockLookup.mockReturnValueOnce(new Promise(() => {}));
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    act(() => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() =>
+      expect(screen.getByText('Looking up definition…')).toBeTruthy()
+    );
+  });
+
+  it('hides loading indicator after lookup completes', async () => {
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() =>
+      expect(screen.queryByText('Looking up definition…')).toBeNull()
+    );
+  });
+
+  it('prefilled definition can be edited by the user', async () => {
+    await openModal();
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    await act(async () => {
+      fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
+      ).toBe('Счастливая случайность')
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText('e.g. Lasting for a very short time'),
+      'Custom edited definition'
+    );
+    expect(
+      screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
+    ).toBe('Custom edited definition');
   });
 });

@@ -14,7 +14,10 @@
       "Bash(wc -l /Users/Revan/IdeaProjects/memorize/app/__tests__/**/*.test.tsx)",
       "Skill(update-config)",
       "Bash(node:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(python3 -m json.tool)",
+      "Bash(npm test *)"
     ]
   }
 }
