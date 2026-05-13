@@ -17,7 +17,11 @@
       "Bash(git stash:*)",
       "WebFetch(domain:localhost)",
       "Bash(python3 -m json.tool)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(tree -L 3 /Users/Revan/IdeaProjects/memorize/app --ignore node_modules)",
+      "Bash(cat)",
+      "Read(//tmp/**)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

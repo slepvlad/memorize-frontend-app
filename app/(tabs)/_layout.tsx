@@ -61,6 +61,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="translator"
+        options={{
+          title: 'Translate',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="language-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="progress"
         options={{
           title: 'Stats',

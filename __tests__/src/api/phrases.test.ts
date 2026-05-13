@@ -1,0 +1,92 @@
+import { phrasesApi, LANGUAGE_TO_API } from '../../../src/api/phrases';
+
+jest.mock('../../../src/api/client', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn(),
+  },
+}));
+
+import apiClient from '../../../src/api/client';
+
+const mockGet = apiClient.get as jest.Mock;
+
+const fakeResponse = {
+  originalWord: 'ephemeral',
+  originalLanguage: 'ENGLISH' as const,
+  translatedWord: 'эфемерный',
+  translatedLanguage: 'RUSSIAN' as const,
+  audioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+  examples: [
+    { original: 'The ephemeral beauty of a sunset.', translation: 'Эфемерная красота заката.' },
+    { original: 'Fame can be ephemeral.', translation: 'Слава может быть мимолётной.' },
+  ],
+};
+
+beforeEach(() => jest.clearAllMocks());
+
+describe('phrasesApi.lookup', () => {
+  it('sends GET to /api/v1/phrases/lookup with correct params', async () => {
+    mockGet.mockResolvedValueOnce({ data: fakeResponse });
+    await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/phrases/lookup', {
+      params: { phrase: 'ephemeral', sourceLanguage: 'ENGLISH', targetLanguage: 'RUSSIAN' },
+    });
+  });
+
+  it('returns the phrase lookup response', async () => {
+    mockGet.mockResolvedValueOnce({ data: fakeResponse });
+    const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
+    expect(result).toEqual(fakeResponse);
+  });
+
+  it('returns originalWord and translatedWord', async () => {
+    mockGet.mockResolvedValueOnce({ data: fakeResponse });
+    const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
+    expect(result.originalWord).toBe('ephemeral');
+    expect(result.translatedWord).toBe('эфемерный');
+  });
+
+  it('returns examples array', async () => {
+    mockGet.mockResolvedValueOnce({ data: fakeResponse });
+    const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
+    expect(result.examples).toHaveLength(2);
+    expect(result.examples[0].original).toBe('The ephemeral beauty of a sunset.');
+    expect(result.examples[0].translation).toBe('Эфемерная красота заката.');
+  });
+
+  it('returns audioId', async () => {
+    mockGet.mockResolvedValueOnce({ data: fakeResponse });
+    const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
+    expect(result.audioId).toBe('c1f2e3d4-0000-0000-0000-000000000001');
+  });
+
+  it('handles null audioId', async () => {
+    mockGet.mockResolvedValueOnce({ data: { ...fakeResponse, audioId: null } });
+    const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
+    expect(result.audioId).toBeNull();
+  });
+
+  it('handles empty examples array', async () => {
+    mockGet.mockResolvedValueOnce({ data: { ...fakeResponse, examples: [] } });
+    const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
+    expect(result.examples).toEqual([]);
+  });
+
+  it('propagates errors', async () => {
+    mockGet.mockRejectedValueOnce(new Error('Network error'));
+    await expect(phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN')).rejects.toThrow(
+      'Network error'
+    );
+  });
+});
+
+describe('LANGUAGE_TO_API', () => {
+  it('maps en to ENGLISH', () => {
+    expect(LANGUAGE_TO_API['en']).toBe('ENGLISH');
+  });
+
+  it('maps ru to RUSSIAN', () => {
+    expect(LANGUAGE_TO_API['ru']).toBe('RUSSIAN');
+  });
+});
