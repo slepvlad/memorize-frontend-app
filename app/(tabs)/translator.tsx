@@ -84,25 +84,19 @@ export default function TranslatorScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Language selector bar */}
-      <View style={styles.langBar}>
-        <View style={styles.langChip}>
-          <Text style={styles.langFlag}>{sourceLang?.flag}</Text>
-          <Text style={styles.langName}>{sourceLang?.name}</Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.swapBtn}
-          onPress={handleSwap}
-          accessibilityLabel="Swap languages"
-        >
-          <Ionicons name="swap-horizontal-outline" size={22} color={colors.primary} />
-        </TouchableOpacity>
-
-        <View style={styles.langChip}>
-          <Text style={styles.langFlag}>{targetLang?.flag}</Text>
-          <Text style={styles.langName}>{targetLang?.name}</Text>
-        </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Translator</Text>
+        {result && (
+          <TouchableOpacity
+            style={styles.saveHeaderBtn}
+            onPress={handleSave}
+            accessibilityLabel="Save for study"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="bookmark-outline" size={22} color={colors.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
@@ -125,16 +119,27 @@ export default function TranslatorScreen() {
             autoCorrect={false}
             accessibilityLabel="Phrase input"
           />
-          {query.length > 0 && (
-            <TouchableOpacity
-              style={styles.clearBtn}
-              onPress={handleClear}
-              accessibilityLabel="Clear input"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
-            </TouchableOpacity>
-          )}
+          <View style={styles.inputFooter}>
+            {result && (
+              <TouchableOpacity
+                onPress={handlePlayAudio}
+                accessibilityLabel="Play original audio"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="volume-high-outline" size={24} color={colors.textTertiary} />
+              </TouchableOpacity>
+            )}
+            {query.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearBtn}
+                onPress={handleClear}
+                accessibilityLabel="Clear input"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Divider */}
@@ -159,14 +164,6 @@ export default function TranslatorScreen() {
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="volume-high-outline" size={24} color={colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconAction}
-                onPress={handleSave}
-                accessibilityLabel="Save for study"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="bookmark-outline" size={24} color={colors.primary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -193,6 +190,27 @@ export default function TranslatorScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Language selector bar */}
+      <View style={styles.langBar}>
+        <View style={styles.langChip}>
+          <Text style={styles.langFlag}>{sourceLang?.flag}</Text>
+          <Text style={styles.langName}>{sourceLang?.name}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.swapBtn}
+          onPress={handleSwap}
+          accessibilityLabel="Swap languages"
+        >
+          <Ionicons name="swap-horizontal-outline" size={22} color={colors.primary} />
+        </TouchableOpacity>
+
+        <View style={styles.langChip}>
+          <Text style={styles.langFlag}>{targetLang?.flag}</Text>
+          <Text style={styles.langName}>{targetLang?.name}</Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -203,12 +221,33 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  saveHeaderBtn: {
+    padding: spacing.xs,
+  },
+
   // Language bar
   langBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
     backgroundColor: colors.background,
   },
   langChip: {
@@ -251,9 +290,13 @@ const styles = StyleSheet.create({
     minHeight: 90,
     textAlignVertical: 'top',
   },
+  inputFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
   clearBtn: {
-    alignSelf: 'flex-end',
-    marginTop: spacing.xs,
+    marginLeft: 'auto',
   },
 
   panelDivider: {

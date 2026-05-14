@@ -250,14 +250,35 @@ describe('TranslatorScreen — stub actions', () => {
     await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
   };
 
-  it('shows play audio button after lookup', async () => {
+  it('shows play audio button (translation) after lookup', async () => {
     await renderWithResult();
     expect(screen.getByLabelText('Play audio')).toBeTruthy();
   });
 
-  it('shows save for study button after lookup', async () => {
+  it('shows play original audio button after lookup', async () => {
+    await renderWithResult();
+    expect(screen.getByLabelText('Play original audio')).toBeTruthy();
+  });
+
+  it('does not show play original audio button before lookup', () => {
+    render(<TranslatorScreen />);
+    expect(screen.queryByLabelText('Play original audio')).toBeNull();
+  });
+
+  it('shows save for study button in header after lookup', async () => {
     await renderWithResult();
     expect(screen.getByLabelText('Save for study')).toBeTruthy();
+  });
+
+  it('does not show save for study button before lookup', () => {
+    render(<TranslatorScreen />);
+    expect(screen.queryByLabelText('Save for study')).toBeNull();
+  });
+
+  it('play original audio button shows coming-soon alert', async () => {
+    await renderWithResult();
+    fireEvent.press(screen.getByLabelText('Play original audio'));
+    expect(Alert.alert).toHaveBeenCalledWith('Coming soon', expect.stringContaining('Audio'));
   });
 
   it('play audio button shows coming-soon alert', async () => {
