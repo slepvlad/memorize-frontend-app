@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { phrasesApi, PhraseLookupResponse, LANGUAGE_TO_API } from '../../src/api/phrases';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
@@ -24,6 +25,7 @@ export default function TranslatorScreen() {
   const [result, setResult] = useState<PhraseLookupResponse | null>(null);
   const [swapped, setSwapped] = useState(false);
 
+  const router = useRouter();
   const { studiedLanguage, nativeLanguage, isConfigured } = useLanguage();
 
   const sourceLangCode = swapped ? nativeLanguage : studiedLanguage;
@@ -86,17 +88,35 @@ export default function TranslatorScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Translator</Text>
-        {result && (
-          <TouchableOpacity
-            style={styles.saveHeaderBtn}
-            onPress={handleSave}
-            accessibilityLabel="Save for study"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="bookmark-outline" size={22} color={colors.primary} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.homeBtn}
+          onPress={() => router.navigate('/')}
+          accessibilityLabel="Go to Home"
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <Text style={styles.homeBtnText}>Home</Text>
+        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {result && query.trim().length > 0 && (
+            <TouchableOpacity
+              onPress={handleClear}
+              accessibilityLabel="Clear search"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close" size={22} color={colors.textTertiary} />
+            </TouchableOpacity>
+          )}
+          {result && (
+            <TouchableOpacity
+              style={styles.saveHeaderBtn}
+              onPress={handleSave}
+              accessibilityLabel="Save for study"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="bookmark-outline" size={22} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -119,8 +139,8 @@ export default function TranslatorScreen() {
             autoCorrect={false}
             accessibilityLabel="Phrase input"
           />
-          <View style={styles.inputFooter}>
-            {result && (
+          {result && (
+            <View style={styles.inputFooter}>
               <TouchableOpacity
                 onPress={handlePlayAudio}
                 accessibilityLabel="Play original audio"
@@ -128,18 +148,8 @@ export default function TranslatorScreen() {
               >
                 <Ionicons name="volume-high-outline" size={24} color={colors.textTertiary} />
               </TouchableOpacity>
-            )}
-            {query.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearBtn}
-                onPress={handleClear}
-                accessibilityLabel="Clear input"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
-              </TouchableOpacity>
-            )}
-          </View>
+            </View>
+          )}
         </View>
 
         {/* Divider */}
@@ -232,11 +242,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.text,
-    letterSpacing: -0.3,
+  homeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  homeBtnText: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: colors.primary,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
   },
   saveHeaderBtn: {
     padding: spacing.xs,
@@ -291,12 +310,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   inputFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginTop: spacing.sm,
-  },
-  clearBtn: {
-    marginLeft: 'auto',
   },
 
   panelDivider: {

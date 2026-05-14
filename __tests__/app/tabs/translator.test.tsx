@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-
 import TranslatorScreen from '../../../app/(tabs)/translator';
 import { phrasesApi } from '../../../src/api/phrases';
 import { useLanguage } from '../../../src/context/LanguageContext';
+import { _mockRouter } from 'expo-router';
 
 jest.mock('../../../src/api/phrases', () => ({
   phrasesApi: { lookup: jest.fn() },
@@ -94,6 +95,19 @@ describe('TranslatorScreen — language bar', () => {
   });
 });
 
+describe('TranslatorScreen — home navigation', () => {
+  it('renders the Home back button', () => {
+    render(<TranslatorScreen />);
+    expect(screen.getByLabelText('Go to Home')).toBeTruthy();
+  });
+
+  it('pressing Home navigates to /', () => {
+    render(<TranslatorScreen />);
+    fireEvent.press(screen.getByLabelText('Go to Home'));
+    expect(_mockRouter.navigate).toHaveBeenCalledWith('/');
+  });
+});
+
 describe('TranslatorScreen — initial render', () => {
   it('renders the phrase input', () => {
     render(<TranslatorScreen />);
@@ -105,24 +119,37 @@ describe('TranslatorScreen — initial render', () => {
     expect(screen.getByText('Enter a word or phrase to see its translation')).toBeTruthy();
   });
 
-  it('does not show clear button when input is empty', () => {
+  it('does not show clear search button before any lookup', () => {
     render(<TranslatorScreen />);
-    expect(screen.queryByLabelText('Clear input')).toBeNull();
+    expect(screen.queryByLabelText('Clear search')).toBeNull();
   });
 
-  it('shows clear button once user types', () => {
-    render(<TranslatorScreen />);
-    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'hello');
-    expect(screen.getByLabelText('Clear input')).toBeTruthy();
-  });
-
-  it('clear button resets query and removes result', async () => {
+  it('does not show clear search button when result exists but query is empty', async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
 
-    fireEvent.press(screen.getByLabelText('Clear input'));
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), '');
+    expect(screen.queryByLabelText('Clear search')).toBeNull();
+  });
+
+  it('shows clear search button in header when result exists and input has text', async () => {
+    render(<TranslatorScreen />);
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+
+    expect(screen.getByLabelText('Clear search')).toBeTruthy();
+  });
+
+  it('clear search button resets query and result', async () => {
+    render(<TranslatorScreen />);
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText('Clear search'));
 
     expect(screen.getByLabelText('Phrase input').props.value).toBe('');
     expect(screen.queryByText('эфемерный')).toBeNull();
