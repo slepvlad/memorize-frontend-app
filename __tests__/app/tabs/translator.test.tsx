@@ -12,6 +12,10 @@ jest.mock('../../../src/api/phrases', () => ({
 
 jest.mock('../../../src/context/LanguageContext', () => ({
   useLanguage: jest.fn(),
+  SUPPORTED_LANGUAGES: [
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+  ],
 }));
 
 const mockLookup = phrasesApi.lookup as jest.Mock;
@@ -49,31 +53,79 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe('TranslatorScreen — initial render', () => {
-  it('renders the header title', () => {
+describe('TranslatorScreen — language bar', () => {
+  it('shows source language name', () => {
     render(<TranslatorScreen />);
-    expect(screen.getByText('Translator')).toBeTruthy();
+    expect(screen.getByText('English')).toBeTruthy();
   });
 
+  it('shows target language name', () => {
+    render(<TranslatorScreen />);
+    expect(screen.getByText('Russian')).toBeTruthy();
+  });
+
+  it('renders swap button', () => {
+    render(<TranslatorScreen />);
+    expect(screen.getByLabelText('Swap languages')).toBeTruthy();
+  });
+
+  it('swapping clears query and result, and flips languages', async () => {
+    render(<TranslatorScreen />);
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText('Swap languages'));
+
+    expect(screen.queryByText('эфемерный')).toBeNull();
+    expect(screen.getByLabelText('Phrase input').props.value).toBe('');
+    expect(screen.getByText('Russian')).toBeTruthy();
+    expect(screen.getByText('English')).toBeTruthy();
+  });
+
+  it('lookup after swap sends flipped language params', async () => {
+    render(<TranslatorScreen />);
+    fireEvent.press(screen.getByLabelText('Swap languages'));
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'эфемерный');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => {
+      expect(mockLookup).toHaveBeenCalledWith('эфемерный', 'RUSSIAN', 'ENGLISH');
+    });
+  });
+});
+
+describe('TranslatorScreen — initial render', () => {
   it('renders the phrase input', () => {
     render(<TranslatorScreen />);
     expect(screen.getByLabelText('Phrase input')).toBeTruthy();
   });
 
-  it('renders the translate button', () => {
+  it('shows the hint text', () => {
     render(<TranslatorScreen />);
-    expect(screen.getByLabelText('Translate')).toBeTruthy();
+    expect(screen.getByText('Enter a word or phrase to see its translation')).toBeTruthy();
   });
 
-  it('shows the empty-state prompt', () => {
+  it('does not show clear button when input is empty', () => {
     render(<TranslatorScreen />);
-    expect(screen.getByText('Translate a phrase')).toBeTruthy();
+    expect(screen.queryByLabelText('Clear input')).toBeNull();
   });
 
-  it('translate button is disabled when input is empty', () => {
+  it('shows clear button once user types', () => {
     render(<TranslatorScreen />);
-    const btn = screen.getByLabelText('Translate');
-    expect(btn.props.accessibilityState?.disabled ?? btn.props.disabled).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'hello');
+    expect(screen.getByLabelText('Clear input')).toBeTruthy();
+  });
+
+  it('clear button resets query and removes result', async () => {
+    render(<TranslatorScreen />);
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText('Clear input'));
+
+    expect(screen.getByLabelText('Phrase input').props.value).toBe('');
+    expect(screen.queryByText('эфемерный')).toBeNull();
   });
 });
 
@@ -107,9 +159,7 @@ describe('TranslatorScreen — lookup flow', () => {
   it('calls phrasesApi.lookup with trimmed phrase and mapped languages', async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), '  ephemeral  ');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => {
       expect(mockLookup).toHaveBeenCalledWith('ephemeral', 'ENGLISH', 'RUSSIAN');
     });
@@ -118,126 +168,94 @@ describe('TranslatorScreen — lookup flow', () => {
   it('shows translated word after successful lookup', async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => {
       expect(screen.getByText('эфемерный')).toBeTruthy();
-    });
-  });
-
-  it('shows original word after successful lookup', async () => {
-    render(<TranslatorScreen />);
-    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('ephemeral')).toBeTruthy();
     });
   });
 
   it('shows examples after successful lookup', async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => {
       expect(screen.getByText('The ephemeral beauty of a sunset.')).toBeTruthy();
       expect(screen.getByText('Эфемерная красота заката.')).toBeTruthy();
-      expect(screen.getByText('Fame can be ephemeral.')).toBeTruthy();
     });
   });
 
-  it('shows the Examples heading when examples are present', async () => {
+  it('shows examples title when examples are present', async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('Examples')).toBeTruthy();
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('Examples')).toBeTruthy());
   });
 
   it('does not show examples section when examples array is empty', async () => {
     mockLookup.mockResolvedValueOnce({ ...fakeResult, examples: [] });
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('эфемерный')).toBeTruthy();
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
     expect(screen.queryByText('Examples')).toBeNull();
   });
 
-  it('hides empty state after receiving results', async () => {
+  it('hides hint text after receiving results', async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => {
-      expect(screen.queryByText('Translate a phrase')).toBeNull();
+      expect(screen.queryByText('Enter a word or phrase to see its translation')).toBeNull();
     });
   });
 
   it('clears previous result when a new lookup starts', async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
 
     mockLookup.mockResolvedValueOnce({ ...fakeResult, translatedWord: 'мимолётный' });
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'fleeting');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => expect(screen.getByText('мимолётный')).toBeTruthy());
     expect(screen.queryByText('эфемерный')).toBeNull();
   });
 
-  it('does not call lookup when input is whitespace only', async () => {
+  it('does not call lookup when input is whitespace only', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), '   ');
-    fireEvent.press(screen.getByLabelText('Translate'));
+    fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing');
     expect(mockLookup).not.toHaveBeenCalled();
   });
 
-  it('silently ignores API errors (handled by global toast)', async () => {
+  it('silently ignores API errors', async () => {
     mockLookup.mockRejectedValueOnce(new Error('Server error'));
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => {
       expect(screen.queryByText('эфемерный')).toBeNull();
     });
   });
+
+
 });
 
 describe('TranslatorScreen — stub actions', () => {
   const renderWithResult = async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('Translate'));
-    });
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
   };
 
-  it('shows "Play audio" button after lookup', async () => {
+  it('shows play audio button after lookup', async () => {
     await renderWithResult();
     expect(screen.getByLabelText('Play audio')).toBeTruthy();
   });
 
-  it('shows "Save for study" button after lookup', async () => {
+  it('shows save for study button after lookup', async () => {
     await renderWithResult();
     expect(screen.getByLabelText('Save for study')).toBeTruthy();
   });
@@ -252,18 +270,5 @@ describe('TranslatorScreen — stub actions', () => {
     await renderWithResult();
     fireEvent.press(screen.getByLabelText('Save for study'));
     expect(Alert.alert).toHaveBeenCalledWith('Coming soon', expect.any(String));
-  });
-});
-
-describe('TranslatorScreen — keyboard submit', () => {
-  it('triggers lookup on keyboard submit', async () => {
-    render(<TranslatorScreen />);
-    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
-    await act(async () => {
-      fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing');
-    });
-    await waitFor(() => {
-      expect(mockLookup).toHaveBeenCalledWith('ephemeral', 'ENGLISH', 'RUSSIAN');
-    });
   });
 });

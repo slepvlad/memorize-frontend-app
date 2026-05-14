@@ -12,27 +12,46 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { phrasesApi, PhraseLookupResponse, LANGUAGE_TO_API } from '../../src/api/phrases';
-import { useLanguage } from '../../src/context/LanguageContext';
+import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
+
+const getLangInfo = (code: string | null) =>
+  SUPPORTED_LANGUAGES.find(l => l.code === code) ?? null;
 
 export default function TranslatorScreen() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PhraseLookupResponse | null>(null);
+  const [swapped, setSwapped] = useState(false);
 
   const { studiedLanguage, nativeLanguage, isConfigured } = useLanguage();
 
-  const sourceLanguage = studiedLanguage ? LANGUAGE_TO_API[studiedLanguage] : undefined;
-  const targetLanguage = nativeLanguage ? LANGUAGE_TO_API[nativeLanguage] : undefined;
+  const sourceLangCode = swapped ? nativeLanguage : studiedLanguage;
+  const targetLangCode = swapped ? studiedLanguage : nativeLanguage;
+  const sourceLang = getLangInfo(sourceLangCode);
+  const targetLang = getLangInfo(targetLangCode);
+  const sourceApiLang = sourceLangCode ? LANGUAGE_TO_API[sourceLangCode] : undefined;
+  const targetApiLang = targetLangCode ? LANGUAGE_TO_API[targetLangCode] : undefined;
 
-  const canLookup = query.trim().length > 0 && !!sourceLanguage && !!targetLanguage;
+  const canLookup = query.trim().length > 0 && !!sourceApiLang && !!targetApiLang;
+
+  const handleSwap = () => {
+    setSwapped(s => !s);
+    setQuery('');
+    setResult(null);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setResult(null);
+  };
 
   const handleLookup = async () => {
     if (!canLookup) return;
     setLoading(true);
     setResult(null);
     try {
-      const data = await phrasesApi.lookup(query.trim(), sourceLanguage!, targetLanguage!);
+      const data = await phrasesApi.lookup(query.trim(), sourceApiLang!, targetApiLang!);
       setResult(data);
     } catch {
       // errors handled by global axios interceptor (toast)
@@ -49,14 +68,11 @@ export default function TranslatorScreen() {
     Alert.alert('Coming soon', 'Saving phrases for study will be available in a future update.');
   };
 
-  if (!isConfigured || !sourceLanguage || !targetLanguage) {
+  if (!isConfigured || !sourceApiLang || !targetApiLang) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Translator</Text>
-        </View>
         <View style={styles.emptyState}>
-          <Ionicons name="globe-outline" size={48} color={colors.textTertiary} />
+          <Ionicons name="globe-outline" size={56} color={colors.textTertiary} />
           <Text style={styles.emptyTitle}>Languages not configured</Text>
           <Text style={styles.emptyText}>
             Set up your native and studied languages to use the translator.
@@ -68,99 +84,112 @@ export default function TranslatorScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Translator</Text>
+      {/* Language selector bar */}
+      <View style={styles.langBar}>
+        <View style={styles.langChip}>
+          <Text style={styles.langFlag}>{sourceLang?.flag}</Text>
+          <Text style={styles.langName}>{sourceLang?.name}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.swapBtn}
+          onPress={handleSwap}
+          accessibilityLabel="Swap languages"
+        >
+          <Ionicons name="swap-horizontal-outline" size={22} color={colors.primary} />
+        </TouchableOpacity>
+
+        <View style={styles.langChip}>
+          <Text style={styles.langFlag}>{targetLang?.flag}</Text>
+          <Text style={styles.langName}>{targetLang?.name}</Text>
+        </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
       >
-        <View style={styles.searchRow}>
+        {/* Input panel */}
+        <View style={styles.inputPanel}>
           <TextInput
-            style={styles.input}
-            placeholder="Enter a word or phrase…"
+            style={styles.inputText}
+            placeholder="Enter text…"
             placeholderTextColor={colors.textTertiary}
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={handleLookup}
-            returnKeyType="search"
+            multiline
+            blurOnSubmit
             autoCapitalize="none"
             autoCorrect={false}
             accessibilityLabel="Phrase input"
           />
-          <TouchableOpacity
-            style={[styles.searchBtn, !canLookup && styles.searchBtnDisabled]}
-            onPress={handleLookup}
-            disabled={!canLookup}
-            accessibilityLabel="Translate"
-          >
-            <Ionicons name="search" size={20} color={colors.textInverse} />
-          </TouchableOpacity>
+          {query.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearBtn}
+              onPress={handleClear}
+              accessibilityLabel="Clear input"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+            </TouchableOpacity>
+          )}
         </View>
 
+        {/* Divider */}
+        <View style={styles.panelDivider} />
+
+        {/* Loading */}
         {loading && (
-          <ActivityIndicator
-            color={colors.primary}
-            style={styles.spinner}
-            accessibilityLabel="Loading"
-          />
+          <View style={styles.loadingPanel}>
+            <ActivityIndicator color={colors.primary} accessibilityLabel="Loading" />
+          </View>
         )}
 
+        {/* Result panel */}
         {result && !loading && (
-          <>
-            <View style={styles.resultCard}>
-              <Text style={styles.originalLabel}>Original</Text>
-              <Text style={styles.originalWord}>{result.originalWord}</Text>
-
-              <View style={styles.divider} />
-
-              <Text style={styles.translatedLabel}>Translation</Text>
-              <Text style={styles.translatedWord}>{result.translatedWord}</Text>
-
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={styles.audioBtn}
-                  onPress={handlePlayAudio}
-                  accessibilityLabel="Play audio"
-                >
-                  <Ionicons name="volume-high-outline" size={18} color={colors.primary} />
-                  <Text style={styles.audioBtnText}>Play audio</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.saveBtn}
-                  onPress={handleSave}
-                  accessibilityLabel="Save for study"
-                >
-                  <Ionicons name="bookmark-outline" size={18} color={colors.textInverse} />
-                  <Text style={styles.saveBtnText}>Save for study</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.resultPanel}>
+            <Text style={styles.resultText}>{result.translatedWord}</Text>
+            <View style={styles.resultActions}>
+              <TouchableOpacity
+                style={styles.iconAction}
+                onPress={handlePlayAudio}
+                accessibilityLabel="Play audio"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="volume-high-outline" size={24} color={colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconAction}
+                onPress={handleSave}
+                accessibilityLabel="Save for study"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="bookmark-outline" size={24} color={colors.primary} />
+              </TouchableOpacity>
             </View>
-
-            {result.examples.length > 0 && (
-              <View style={styles.examplesSection}>
-                <Text style={styles.examplesTitle}>Examples</Text>
-                {result.examples.map((ex, i) => (
-                  <View key={i} style={styles.exampleItem}>
-                    <Text style={styles.exampleOriginal}>{ex.original}</Text>
-                    <Text style={styles.exampleTranslation}>{ex.translation}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </>
+          </View>
         )}
 
+        {/* Examples */}
+        {result && !loading && result.examples.length > 0 && (
+          <View style={styles.examplesSection}>
+            <Text style={styles.examplesTitle}>Examples</Text>
+            {result.examples.map((ex, i) => (
+              <View key={i} style={styles.exampleItem}>
+                <Text style={styles.exampleOriginal}>{ex.original}</Text>
+                <Text style={styles.exampleTranslation}>{ex.translation}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Empty hint */}
         {!loading && !result && (
-          <View style={styles.emptyState}>
-            <Ionicons name="globe-outline" size={48} color={colors.textTertiary} />
-            <Text style={styles.emptyTitle}>Translate a phrase</Text>
-            <Text style={styles.emptyText}>
-              Enter a word or phrase above to see its translation and examples.
-            </Text>
+          <View style={styles.hintBox}>
+            <Ionicons name="language-outline" size={32} color={colors.textTertiary} />
+            <Text style={styles.hintText}>Enter a word or phrase to see its translation</Text>
           </View>
         )}
       </ScrollView>
@@ -173,157 +202,147 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: spacing.xxl,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
+
+  // Language bar
+  langBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  scrollContent: {
-    padding: spacing.xxl,
-    flexGrow: 1,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.xxl,
-  },
-  input: {
+  langChip: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: colors.surface,
-  },
-  searchBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.lg,
   },
-  searchBtnDisabled: {
-    opacity: 0.4,
-  },
-  spinner: {
-    marginTop: spacing.xxxl,
-  },
-  resultCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.xxl,
-    marginBottom: spacing.xxl,
-  },
-  originalLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  originalWord: {
+  langFlag: {
     fontSize: 18,
+  },
+  langName: {
+    fontSize: 15,
     fontWeight: '600',
     color: colors.text,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginVertical: spacing.lg,
+  swapBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
   },
-  translatedLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
+
+  // Input panel
+  inputPanel: {
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+    minHeight: 160,
   },
-  translatedWord: {
+  inputText: {
+    fontSize: 22,
+    color: colors.text,
+    lineHeight: 30,
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  clearBtn: {
+    alignSelf: 'flex-end',
+    marginTop: spacing.xs,
+  },
+
+  panelDivider: {
+    height: 8,
+    backgroundColor: colors.surface,
+  },
+
+  // Loading
+  loadingPanel: {
+    paddingVertical: spacing.xxxl,
+    alignItems: 'center',
+  },
+
+  // Result panel
+  resultPanel: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.xl,
+    minHeight: 120,
+  },
+  resultText: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.primary,
+    color: colors.primaryDark,
     letterSpacing: -0.3,
+    lineHeight: 36,
   },
-  actions: {
+  resultActions: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.xl,
+    gap: spacing.xl,
+    marginTop: spacing.lg,
   },
-  audioBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
+  iconAction: {
+    padding: spacing.xs,
   },
-  audioBtnText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.primary,
-  },
-  saveBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
-  },
-  saveBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textInverse,
-  },
+
+  // Examples
   examplesSection: {
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.xl,
     gap: spacing.md,
   },
   examplesTitle: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   exampleItem: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    gap: 4,
   },
   exampleOriginal: {
     fontSize: 14,
     fontWeight: '500',
     color: colors.text,
+    lineHeight: 20,
   },
   exampleTranslation: {
     fontSize: 14,
     color: colors.textSecondary,
+    lineHeight: 20,
   },
+
+  // Hint / empty state
+  hintBox: {
+    paddingTop: spacing.xxxl * 2,
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.xxxl,
+  },
+  hintText: {
+    fontSize: 14,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Not-configured state
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60,
     gap: spacing.sm,
+    paddingHorizontal: spacing.xxxl,
   },
   emptyTitle: {
     fontSize: 18,
@@ -335,6 +354,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: spacing.xxxl,
   },
 });
