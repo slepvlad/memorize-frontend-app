@@ -6,6 +6,10 @@ import { phrasesApi } from '../../../src/api/phrases';
 import { useLanguage } from '../../../src/context/LanguageContext';
 import { _mockRouter } from 'expo-router';
 
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 85,
+}));
+
 jest.mock('../../../src/api/phrases', () => ({
   phrasesApi: { lookup: jest.fn() },
   LANGUAGE_TO_API: { en: 'ENGLISH', ru: 'RUSSIAN' },

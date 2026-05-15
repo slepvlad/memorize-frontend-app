@@ -9,7 +9,9 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { phrasesApi, PhraseLookupResponse, LANGUAGE_TO_API } from '../../src/api/phrases';
@@ -27,6 +29,12 @@ export default function TranslatorScreen() {
 
   const router = useRouter();
   const { studiedLanguage, nativeLanguage, isConfigured } = useLanguage();
+
+  const tabBarHeight = useBottomTabBarHeight();
+  const keyboard = useAnimatedKeyboard();
+  const keyboardStyle = useAnimatedStyle(() => ({
+    paddingBottom: Math.max(0, keyboard.height.value - tabBarHeight - 30),
+  }));
 
   const sourceLangCode = swapped ? nativeLanguage : studiedLanguage;
   const targetLangCode = swapped ? studiedLanguage : nativeLanguage;
@@ -119,6 +127,7 @@ export default function TranslatorScreen() {
         </View>
       </View>
 
+      <Animated.View style={[styles.flex, keyboardStyle]}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -221,6 +230,7 @@ export default function TranslatorScreen() {
           <Text style={styles.langName}>{targetLang?.name}</Text>
         </View>
       </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -229,6 +239,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
   },
 
   // Header
