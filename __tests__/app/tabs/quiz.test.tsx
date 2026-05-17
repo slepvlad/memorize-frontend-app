@@ -68,10 +68,10 @@ describe('QuizScreen — not enough words', () => {
     ).toBeTruthy();
   });
 
-  it('shows "Not enough words" when words list is empty', async () => {
+  it('shows "All caught up!" when words list is empty', async () => {
     mockGetAll.mockResolvedValue(makePage([]));
     render(<QuizScreen />);
-    await waitFor(() => expect(screen.getByText('Not enough words')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('All caught up!')).toBeTruthy());
   });
 });
 
@@ -125,9 +125,9 @@ describe('QuizScreen — initial rendering', () => {
     );
   });
 
-  it('fetches words with page=0, size=100 on mount', async () => {
+  it('fetches words with page=0, size=200 on mount', async () => {
     render(<QuizScreen />);
-    await waitFor(() => expect(mockGetAll).toHaveBeenCalledWith(0, 100));
+    await waitFor(() => expect(mockGetAll).toHaveBeenCalledWith(0, 200));
   });
 });
 
@@ -206,7 +206,7 @@ describe('QuizScreen — navigation between questions', () => {
     await waitFor(() => expect(screen.queryByText('Next question')).toBeNull());
   });
 
-  it('shows Restart quiz on the last question', async () => {
+  it('shows See results on the last question', async () => {
     render(<QuizScreen />);
     // Q1: Ephemeral
     await waitFor(() => screen.getByText('Lasting for a very short time'));
@@ -223,15 +223,14 @@ describe('QuizScreen — navigation between questions', () => {
     fireEvent.press(screen.getByText('Fluent and persuasive in speech'));
     await waitFor(() => screen.getByText('Next question'));
     fireEvent.press(screen.getByText('Next question'));
-    // Q4: Resilient — last question shows Restart quiz
+    // Q4: Resilient — last question shows See results
     await waitFor(() => screen.getByText('Able to recover quickly'));
     fireEvent.press(screen.getByText('Able to recover quickly'));
-    await waitFor(() => expect(screen.getByText('Restart quiz')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('See results')).toBeTruthy());
   });
 
-  it('reloads quiz when Restart quiz is pressed', async () => {
+  it('shows results screen and New session button after completing quiz', async () => {
     render(<QuizScreen />);
-    // Answer all 4 questions then restart
     await waitFor(() => screen.getByText('Lasting for a very short time'));
     fireEvent.press(screen.getByText('Lasting for a very short time'));
     await waitFor(() => screen.getByText('Next question'));
@@ -249,10 +248,13 @@ describe('QuizScreen — navigation between questions', () => {
 
     await waitFor(() => screen.getByText('Able to recover quickly'));
     fireEvent.press(screen.getByText('Able to recover quickly'));
-    await waitFor(() => screen.getByText('Restart quiz'));
-    await act(async () => { fireEvent.press(screen.getByText('Restart quiz')); });
+    await waitFor(() => screen.getByText('See results'));
+    fireEvent.press(screen.getByText('See results'));
 
-    // getAll called at mount + after restart
+    await waitFor(() => expect(screen.getByText('New session')).toBeTruthy());
+    await act(async () => { fireEvent.press(screen.getByText('New session')); });
+
+    // getAll called at mount + after new session
     expect(mockGetAll.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });

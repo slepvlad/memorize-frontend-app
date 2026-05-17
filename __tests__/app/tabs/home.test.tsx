@@ -9,6 +9,21 @@ import { wordsApi } from '../../../src/api/words';
 jest.mock('../../../src/api/words', () => ({
   wordsApi: { getAll: jest.fn(), create: jest.fn() },
 }));
+
+jest.mock('../../../src/context/LanguageContext', () => ({
+  useLanguage: jest.fn(() => ({
+    nativeLanguage: 'ru',
+    studiedLanguage: 'en',
+    isConfigured: true,
+    isInitializing: false,
+    setLanguages: jest.fn(),
+    clearLanguages: jest.fn(),
+  })),
+  SUPPORTED_LANGUAGES: [
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+  ],
+}));
 jest.mock('../../../src/api/auth', () => ({
   authApi: { login: jest.fn(), register: jest.fn(), refreshToken: jest.fn(), logout: jest.fn() },
 }));
