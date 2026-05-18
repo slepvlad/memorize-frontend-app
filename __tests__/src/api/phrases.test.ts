@@ -4,12 +4,14 @@ jest.mock('../../../src/api/client', () => ({
   __esModule: true,
   default: {
     get: jest.fn(),
+    post: jest.fn(),
   },
 }));
 
 import apiClient from '../../../src/api/client';
 
 const mockGet = apiClient.get as jest.Mock;
+const mockPost = apiClient.post as jest.Mock;
 
 const fakeResponse = {
   originalWord: 'ephemeral',
@@ -78,6 +80,48 @@ describe('phrasesApi.lookup', () => {
     await expect(phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN')).rejects.toThrow(
       'Network error'
     );
+  });
+});
+
+describe('phrasesApi.save', () => {
+  const saveRequest = {
+    originalWord: 'ephemeral',
+    originalLanguage: 'ENGLISH' as const,
+    translatedWord: 'эфемерный',
+    translatedLanguage: 'RUSSIAN' as const,
+    audioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+    examples: [
+      { original: 'The ephemeral beauty of a sunset.', translation: 'Эфемерная красота заката.' },
+    ],
+  };
+
+  it('sends POST to /api/v1/phrases with request body', async () => {
+    mockPost.mockResolvedValueOnce({ data: { id: 'new-phrase-id' } });
+    await phrasesApi.save(saveRequest);
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/phrases', saveRequest);
+  });
+
+  it('returns the created phrase id', async () => {
+    mockPost.mockResolvedValueOnce({ data: { id: 'new-phrase-id' } });
+    const result = await phrasesApi.save(saveRequest);
+    expect(result.id).toBe('new-phrase-id');
+  });
+
+  it('sends only required fields when optional ones are omitted', async () => {
+    const minimalRequest = {
+      originalWord: 'ephemeral',
+      originalLanguage: 'ENGLISH' as const,
+      translatedWord: 'эфемерный',
+      translatedLanguage: 'RUSSIAN' as const,
+    };
+    mockPost.mockResolvedValueOnce({ data: { id: 'new-phrase-id' } });
+    await phrasesApi.save(minimalRequest);
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/phrases', minimalRequest);
+  });
+
+  it('propagates errors', async () => {
+    mockPost.mockRejectedValueOnce(new Error('Network error'));
+    await expect(phrasesApi.save(saveRequest)).rejects.toThrow('Network error');
   });
 });
 

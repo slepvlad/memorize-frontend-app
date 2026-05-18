@@ -11,7 +11,7 @@ jest.mock('@react-navigation/bottom-tabs', () => ({
 }));
 
 jest.mock('../../../src/api/phrases', () => ({
-  phrasesApi: { lookup: jest.fn() },
+  phrasesApi: { lookup: jest.fn(), save: jest.fn() },
   LANGUAGE_TO_API: { en: 'ENGLISH', ru: 'RUSSIAN' },
 }));
 
@@ -24,6 +24,7 @@ jest.mock('../../../src/context/LanguageContext', () => ({
 }));
 
 const mockLookup = phrasesApi.lookup as jest.Mock;
+const mockSave = phrasesApi.save as jest.Mock;
 const mockUseLanguage = useLanguage as jest.Mock;
 
 const fakeResult = {
@@ -51,6 +52,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUseLanguage.mockReturnValue(configuredLanguage);
   mockLookup.mockResolvedValue(fakeResult);
+  mockSave.mockResolvedValue({ id: 'saved-phrase-id' });
   jest.spyOn(Alert, 'alert');
 });
 
@@ -318,9 +320,59 @@ describe('TranslatorScreen — stub actions', () => {
     expect(Alert.alert).toHaveBeenCalledWith('Coming soon', expect.stringContaining('Audio'));
   });
 
-  it('save button shows coming-soon alert', async () => {
+});
+
+describe('TranslatorScreen — save phrase', () => {
+  const renderWithResult = async () => {
+    render(<TranslatorScreen />);
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+  };
+
+  it('pressing save calls phrasesApi.save with the lookup result', async () => {
     await renderWithResult();
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    await waitFor(() => {
+      expect(mockSave).toHaveBeenCalledWith({
+        originalWord: fakeResult.originalWord,
+        originalLanguage: fakeResult.originalLanguage,
+        translatedWord: fakeResult.translatedWord,
+        translatedLanguage: fakeResult.translatedLanguage,
+        audioId: fakeResult.audioId,
+        examples: fakeResult.examples,
+      });
+    });
+  });
+
+  it('save button cannot be pressed again after successful save', async () => {
+    await renderWithResult();
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
     fireEvent.press(screen.getByLabelText('Save for study'));
-    expect(Alert.alert).toHaveBeenCalledWith('Coming soon', expect.any(String));
+    expect(mockSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('save button remains enabled after a save error', async () => {
+    mockSave.mockRejectedValueOnce(new Error('Server error'));
+    await renderWithResult();
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    expect(mockSave).toHaveBeenCalledTimes(2);
+  });
+
+  it('saved state resets when a new lookup is performed', async () => {
+    await renderWithResult();
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+
+    mockLookup.mockResolvedValueOnce({ ...fakeResult, translatedWord: 'мимолётный' });
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'fleeting');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByText('мимолётный')).toBeTruthy());
+
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    expect(mockSave).toHaveBeenCalledTimes(2);
   });
 });

@@ -26,6 +26,8 @@ export default function TranslatorScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PhraseLookupResponse | null>(null);
   const [swapped, setSwapped] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const router = useRouter();
   const { studiedLanguage, nativeLanguage, isConfigured } = useLanguage();
@@ -49,17 +51,20 @@ export default function TranslatorScreen() {
     setSwapped(s => !s);
     setQuery('');
     setResult(null);
+    setSaved(false);
   };
 
   const handleClear = () => {
     setQuery('');
     setResult(null);
+    setSaved(false);
   };
 
   const handleLookup = async () => {
     if (!canLookup) return;
     setLoading(true);
     setResult(null);
+    setSaved(false);
     try {
       const data = await phrasesApi.lookup(query.trim(), sourceApiLang!, targetApiLang!);
       setResult(data);
@@ -74,8 +79,24 @@ export default function TranslatorScreen() {
     Alert.alert('Coming soon', 'Audio playback will be available in a future update.');
   };
 
-  const handleSave = () => {
-    Alert.alert('Coming soon', 'Saving phrases for study will be available in a future update.');
+  const handleSave = async () => {
+    if (!result || saving || saved) return;
+    setSaving(true);
+    try {
+      await phrasesApi.save({
+        originalWord: result.originalWord,
+        originalLanguage: result.originalLanguage,
+        translatedWord: result.translatedWord,
+        translatedLanguage: result.translatedLanguage,
+        audioId: result.audioId,
+        examples: result.examples,
+      });
+      setSaved(true);
+    } catch {
+      // errors handled by global axios interceptor (toast)
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!isConfigured || !sourceApiLang || !targetApiLang) {
@@ -119,9 +140,18 @@ export default function TranslatorScreen() {
               style={styles.saveHeaderBtn}
               onPress={handleSave}
               accessibilityLabel="Save for study"
+              disabled={saved || saving}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="bookmark-outline" size={22} color={colors.primary} />
+              {saving ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons
+                  name={saved ? 'bookmark' : 'bookmark-outline'}
+                  size={22}
+                  color={colors.primary}
+                />
+              )}
             </TouchableOpacity>
           )}
         </View>
