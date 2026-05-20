@@ -18,7 +18,8 @@ const fakeResponse = {
   originalLanguage: 'ENGLISH' as const,
   translatedWord: 'эфемерный',
   translatedLanguage: 'RUSSIAN' as const,
-  audioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+  originalAudioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+  translatedAudioId: 'c1f2e3d4-0000-0000-0000-000000000002',
   examples: [
     { original: 'The ephemeral beauty of a sunset.', translation: 'Эфемерная красота заката.' },
     { original: 'Fame can be ephemeral.', translation: 'Слава может быть мимолётной.' },
@@ -57,16 +58,20 @@ describe('phrasesApi.lookup', () => {
     expect(result.examples[0].translation).toBe('Эфемерная красота заката.');
   });
 
-  it('returns audioId', async () => {
+  it('returns originalAudioId and translatedAudioId', async () => {
     mockGet.mockResolvedValueOnce({ data: fakeResponse });
     const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
-    expect(result.audioId).toBe('c1f2e3d4-0000-0000-0000-000000000001');
+    expect(result.originalAudioId).toBe('c1f2e3d4-0000-0000-0000-000000000001');
+    expect(result.translatedAudioId).toBe('c1f2e3d4-0000-0000-0000-000000000002');
   });
 
-  it('handles null audioId', async () => {
-    mockGet.mockResolvedValueOnce({ data: { ...fakeResponse, audioId: null } });
+  it('handles null audio ids', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { ...fakeResponse, originalAudioId: null, translatedAudioId: null },
+    });
     const result = await phrasesApi.lookup('ephemeral', 'ENGLISH', 'RUSSIAN');
-    expect(result.audioId).toBeNull();
+    expect(result.originalAudioId).toBeNull();
+    expect(result.translatedAudioId).toBeNull();
   });
 
   it('handles empty examples array', async () => {
@@ -89,7 +94,8 @@ describe('phrasesApi.save', () => {
     originalLanguage: 'ENGLISH' as const,
     translatedWord: 'эфемерный',
     translatedLanguage: 'RUSSIAN' as const,
-    audioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+    originalAudioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+    translatedAudioId: 'c1f2e3d4-0000-0000-0000-000000000002',
     examples: [
       { original: 'The ephemeral beauty of a sunset.', translation: 'Эфемерная красота заката.' },
     ],

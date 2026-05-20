@@ -32,7 +32,8 @@ const fakeResult = {
   originalLanguage: 'ENGLISH' as const,
   translatedWord: 'эфемерный',
   translatedLanguage: 'RUSSIAN' as const,
-  audioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+  originalAudioId: 'c1f2e3d4-0000-0000-0000-000000000001',
+  translatedAudioId: 'c1f2e3d4-0000-0000-0000-000000000002',
   examples: [
     { original: 'The ephemeral beauty of a sunset.', translation: 'Эфемерная красота заката.' },
     { original: 'Fame can be ephemeral.', translation: 'Слава может быть мимолётной.' },
@@ -80,11 +81,11 @@ describe('TranslatorScreen — language bar', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
 
     fireEvent.press(screen.getByLabelText('Swap languages'));
 
-    expect(screen.queryByText('эфемерный')).toBeNull();
+    expect(screen.queryByDisplayValue('эфемерный')).toBeNull();
     expect(screen.getByLabelText('Phrase input').props.value).toBe('');
     expect(screen.getByText('Russian')).toBeTruthy();
     expect(screen.getByText('English')).toBeTruthy();
@@ -134,7 +135,7 @@ describe('TranslatorScreen — initial render', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
 
     fireEvent.changeText(screen.getByLabelText('Phrase input'), '');
     expect(screen.queryByLabelText('Clear search')).toBeNull();
@@ -144,7 +145,7 @@ describe('TranslatorScreen — initial render', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
 
     expect(screen.getByLabelText('Clear search')).toBeTruthy();
   });
@@ -153,12 +154,12 @@ describe('TranslatorScreen — initial render', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
 
     fireEvent.press(screen.getByLabelText('Clear search'));
 
     expect(screen.getByLabelText('Phrase input').props.value).toBe('');
-    expect(screen.queryByText('эфемерный')).toBeNull();
+    expect(screen.queryByDisplayValue('эфемерный')).toBeNull();
   });
 });
 
@@ -203,7 +204,7 @@ describe('TranslatorScreen — lookup flow', () => {
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => {
-      expect(screen.getByText('эфемерный')).toBeTruthy();
+      expect(screen.getByDisplayValue('эфемерный')).toBeTruthy();
     });
   });
 
@@ -229,7 +230,7 @@ describe('TranslatorScreen — lookup flow', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
     expect(screen.queryByText('Examples')).toBeNull();
   });
 
@@ -246,13 +247,13 @@ describe('TranslatorScreen — lookup flow', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
 
     mockLookup.mockResolvedValueOnce({ ...fakeResult, translatedWord: 'мимолётный' });
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'fleeting');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('мимолётный')).toBeTruthy());
-    expect(screen.queryByText('эфемерный')).toBeNull();
+    await waitFor(() => expect(screen.getByDisplayValue('мимолётный')).toBeTruthy());
+    expect(screen.queryByDisplayValue('эфемерный')).toBeNull();
   });
 
   it('does not call lookup when input is whitespace only', () => {
@@ -268,7 +269,7 @@ describe('TranslatorScreen — lookup flow', () => {
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
     await waitFor(() => {
-      expect(screen.queryByText('эфемерный')).toBeNull();
+      expect(screen.queryByDisplayValue('эфемерный')).toBeNull();
     });
   });
 
@@ -280,7 +281,7 @@ describe('TranslatorScreen — stub actions', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
   };
 
   it('shows play audio button (translation) after lookup', async () => {
@@ -327,7 +328,7 @@ describe('TranslatorScreen — save phrase', () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('эфемерный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
   };
 
   it('pressing save calls phrasesApi.save with the lookup result', async () => {
@@ -339,7 +340,8 @@ describe('TranslatorScreen — save phrase', () => {
         originalLanguage: fakeResult.originalLanguage,
         translatedWord: fakeResult.translatedWord,
         translatedLanguage: fakeResult.translatedLanguage,
-        audioId: fakeResult.audioId,
+        originalAudioId: fakeResult.originalAudioId,
+        translatedAudioId: fakeResult.translatedAudioId,
         examples: fakeResult.examples,
       });
     });
@@ -370,9 +372,52 @@ describe('TranslatorScreen — save phrase', () => {
     mockLookup.mockResolvedValueOnce({ ...fakeResult, translatedWord: 'мимолётный' });
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'fleeting');
     await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
-    await waitFor(() => expect(screen.getByText('мимолётный')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('мимолётный')).toBeTruthy());
 
     await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
     expect(mockSave).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('TranslatorScreen — edit translated phrase', () => {
+  const renderWithResult = async () => {
+    render(<TranslatorScreen />);
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByDisplayValue('эфемерный')).toBeTruthy());
+  };
+
+  it('translated phrase is shown in an editable input after lookup', async () => {
+    await renderWithResult();
+    expect(screen.getByLabelText('Translated phrase')).toBeTruthy();
+    expect(screen.getByDisplayValue('эфемерный')).toBeTruthy();
+  });
+
+  it('edited translation is used when saving', async () => {
+    await renderWithResult();
+    fireEvent.changeText(screen.getByLabelText('Translated phrase'), 'мимолётный');
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    await waitFor(() => {
+      expect(mockSave).toHaveBeenCalledWith(
+        expect.objectContaining({ translatedWord: 'мимолётный' })
+      );
+    });
+  });
+
+  it('editing the translation resets saved state allowing re-save', async () => {
+    await renderWithResult();
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+
+    fireEvent.changeText(screen.getByLabelText('Translated phrase'), 'мимолётный');
+    await act(async () => fireEvent.press(screen.getByLabelText('Save for study')));
+    expect(mockSave).toHaveBeenCalledTimes(2);
+  });
+
+  it('editing translation updates the displayed value', async () => {
+    await renderWithResult();
+    fireEvent.changeText(screen.getByLabelText('Translated phrase'), 'мимолётный');
+    expect(screen.getByDisplayValue('мимолётный')).toBeTruthy();
+    expect(screen.queryByDisplayValue('эфемерный')).toBeNull();
   });
 });

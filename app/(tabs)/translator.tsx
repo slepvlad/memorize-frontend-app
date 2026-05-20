@@ -26,6 +26,7 @@ export default function TranslatorScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PhraseLookupResponse | null>(null);
   const [swapped, setSwapped] = useState(false);
+  const [editedTranslation, setEditedTranslation] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -51,12 +52,14 @@ export default function TranslatorScreen() {
     setSwapped(s => !s);
     setQuery('');
     setResult(null);
+    setEditedTranslation('');
     setSaved(false);
   };
 
   const handleClear = () => {
     setQuery('');
     setResult(null);
+    setEditedTranslation('');
     setSaved(false);
   };
 
@@ -64,10 +67,12 @@ export default function TranslatorScreen() {
     if (!canLookup) return;
     setLoading(true);
     setResult(null);
+    setEditedTranslation('');
     setSaved(false);
     try {
       const data = await phrasesApi.lookup(query.trim(), sourceApiLang!, targetApiLang!);
       setResult(data);
+      setEditedTranslation(data.translatedWord);
     } catch {
       // errors handled by global axios interceptor (toast)
     } finally {
@@ -86,9 +91,10 @@ export default function TranslatorScreen() {
       await phrasesApi.save({
         originalWord: result.originalWord,
         originalLanguage: result.originalLanguage,
-        translatedWord: result.translatedWord,
+        translatedWord: editedTranslation,
         translatedLanguage: result.translatedLanguage,
-        audioId: result.audioId,
+        originalAudioId: result.originalAudioId,
+        translatedAudioId: result.translatedAudioId,
         examples: result.examples,
       });
       setSaved(true);
@@ -204,7 +210,18 @@ export default function TranslatorScreen() {
         {/* Result panel */}
         {result && !loading && (
           <View style={styles.resultPanel}>
-            <Text style={styles.resultText}>{result.translatedWord}</Text>
+            <TextInput
+              style={styles.resultText}
+              value={editedTranslation}
+              onChangeText={text => {
+                setEditedTranslation(text);
+                if (saved) setSaved(false);
+              }}
+              multiline
+              autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel="Translated phrase"
+            />
             <View style={styles.resultActions}>
               <TouchableOpacity
                 style={styles.iconAction}

@@ -12,7 +12,8 @@ export interface PhraseLookupResponse {
   originalLanguage: ApiLanguage;
   translatedWord: string;
   translatedLanguage: ApiLanguage;
-  audioId: string | null;
+  originalAudioId: string | null;
+  translatedAudioId: string | null;
   examples: Example[];
 }
 
@@ -21,7 +22,8 @@ export interface PhraseCreateRequest {
   originalLanguage: ApiLanguage;
   translatedWord: string;
   translatedLanguage: ApiLanguage;
-  audioId?: string | null;
+  originalAudioId?: string | null;
+  translatedAudioId?: string | null;
   examples?: Example[];
 }
 
