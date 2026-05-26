@@ -21,7 +21,8 @@
       "Bash(tree -L 3 /Users/Revan/IdeaProjects/memorize/app --ignore node_modules)",
       "Bash(cat)",
       "Read(//tmp/**)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(curl -v http://localhost:8080/v3/api-docs)"
     ]
   }
 }

@@ -2,17 +2,18 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import VocabularyScreen from '../../../app/(tabs)/vocabulary';
-import { wordsApi } from '../../../src/api/words';
+import { phrasesApi } from '../../../src/api/phrases';
 import { dictionaryApi, translationApi } from '../../../src/api/dictionary';
 import { useLanguage } from '../../../src/context/LanguageContext';
 
-jest.mock('../../../src/api/words', () => ({
-  wordsApi: {
+jest.mock('../../../src/api/phrases', () => ({
+  phrasesApi: {
     getAll: jest.fn(),
-    create: jest.fn(),
+    save: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   },
+  LANGUAGE_TO_API: { en: 'ENGLISH', ru: 'RUSSIAN' },
 }));
 
 jest.mock('../../../src/api/dictionary', () => ({
@@ -24,23 +25,28 @@ jest.mock('../../../src/context/LanguageContext', () => ({
   useLanguage: jest.fn(),
 }));
 
-const mockGetAll = wordsApi.getAll as jest.Mock;
-const mockCreate = wordsApi.create as jest.Mock;
-const mockUpdate = wordsApi.update as jest.Mock;
-const mockDelete = wordsApi.delete as jest.Mock;
+const mockGetAll = phrasesApi.getAll as jest.Mock;
+const mockSave = phrasesApi.save as jest.Mock;
+const mockUpdate = phrasesApi.update as jest.Mock;
+const mockDelete = phrasesApi.delete as jest.Mock;
 const mockLookup = dictionaryApi.lookup as jest.Mock;
 const mockTranslate = translationApi.translate as jest.Mock;
 const mockUseLanguage = useLanguage as jest.Mock;
 
-const makeWord = (
+const makePhrase = (
   id: string,
-  term: string,
-  definition = '',
+  originalWord: string,
+  translatedWord = '',
   repetitions = 0
 ) => ({
   id,
-  term,
-  definition: definition || undefined,
+  originalWord,
+  originalLanguage: 'ENGLISH' as const,
+  translatedWord,
+  translatedLanguage: 'RUSSIAN' as const,
+  originalAudioId: null,
+  translatedAudioId: null,
+  examples: [],
   interval: 1,
   repetitions,
   easiness_factor: 2.5,
@@ -48,26 +54,26 @@ const makeWord = (
 });
 
 const makePage = (
-  words = [
-    makeWord('1', 'Ephemeral', 'Lasting for a very short time'),
-    makeWord('2', 'Ubiquitous', 'Present everywhere', 2),
+  phrases = [
+    makePhrase('1', 'Ephemeral', 'Lasting for a very short time'),
+    makePhrase('2', 'Ubiquitous', 'Present everywhere', 2),
   ],
   extra: Partial<{ totalElements: number; last: boolean }> = {}
 ) => ({
-  content: words,
-  totalElements: extra.totalElements ?? words.length,
+  content: phrases,
+  totalElements: extra.totalElements ?? phrases.length,
   totalPages: 1,
-  numberOfElements: words.length,
+  numberOfElements: phrases.length,
   first: true,
   last: extra.last ?? true,
-  empty: words.length === 0,
+  empty: phrases.length === 0,
 });
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetAll.mockResolvedValue(makePage());
-  mockCreate.mockResolvedValue(makeWord('99', 'Serendipity', 'Happy chance'));
-  mockUpdate.mockResolvedValue(makeWord('1', 'Ephemeral Updated', 'Short-lived'));
+  mockSave.mockResolvedValue({ id: '99' });
+  mockUpdate.mockResolvedValue(makePhrase('1', 'Ephemeral Updated', 'Short-lived'));
   mockDelete.mockResolvedValue(undefined);
   mockLookup.mockResolvedValue({
     word: 'serendipity',
@@ -122,12 +128,12 @@ describe('VocabularyScreen — rendering', () => {
   });
 
   it('shows "1 word" for singular count', async () => {
-    mockGetAll.mockResolvedValue(makePage([makeWord('1', 'Solo')], { totalElements: 1 }));
+    mockGetAll.mockResolvedValue(makePage([makePhrase('1', 'Solo')], { totalElements: 1 }));
     render(<VocabularyScreen />);
     await waitFor(() => expect(screen.getByText('1 word')).toBeTruthy());
   });
 
-  it('renders all word terms', async () => {
+  it('renders all phrase original words', async () => {
     render(<VocabularyScreen />);
     await waitFor(() => {
       expect(screen.getByText('Ephemeral')).toBeTruthy();
@@ -135,24 +141,24 @@ describe('VocabularyScreen — rendering', () => {
     });
   });
 
-  it('renders word definitions', async () => {
+  it('renders phrase translations', async () => {
     render(<VocabularyScreen />);
     await waitFor(() =>
       expect(screen.getByText('Lasting for a very short time')).toBeTruthy()
     );
   });
 
-  it('shows New badge for unreviewed words', async () => {
+  it('shows New badge for unreviewed phrases', async () => {
     render(<VocabularyScreen />);
     await waitFor(() => expect(screen.getAllByText('New').length).toBeGreaterThan(0));
   });
 
-  it('shows Reviewed badge for reviewed words', async () => {
+  it('shows Reviewed badge for reviewed phrases', async () => {
     render(<VocabularyScreen />);
     await waitFor(() => expect(screen.getAllByText('Reviewed').length).toBeGreaterThan(0));
   });
 
-  it('calls wordsApi.getAll with page=0 and PAGE_SIZE=20 on mount', async () => {
+  it('calls phrasesApi.getAll with page=0 and PAGE_SIZE=20 on mount', async () => {
     render(<VocabularyScreen />);
     await waitFor(() => expect(mockGetAll).toHaveBeenCalledWith(0, 20));
   });
@@ -181,13 +187,13 @@ describe('VocabularyScreen — empty state', () => {
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
 describe('VocabularyScreen — pagination', () => {
-  it('fetches next page and appends words when list end is reached', async () => {
+  it('fetches next page and appends phrases when list end is reached', async () => {
     const firstPage = makePage(
-      [makeWord('1', 'Ephemeral')],
+      [makePhrase('1', 'Ephemeral')],
       { totalElements: 2, last: false }
     );
     const secondPage = makePage(
-      [makeWord('2', 'Ubiquitous')],
+      [makePhrase('2', 'Ubiquitous')],
       { totalElements: 2, last: true }
     );
     mockGetAll
@@ -210,7 +216,7 @@ describe('VocabularyScreen — pagination', () => {
   });
 
   it('does not fetch next page when already on last page', async () => {
-    mockGetAll.mockResolvedValue(makePage([makeWord('1', 'Ephemeral')], { last: true }));
+    mockGetAll.mockResolvedValue(makePage([makePhrase('1', 'Ephemeral')], { last: true }));
     render(<VocabularyScreen />);
     await waitFor(() => screen.getByText('Ephemeral'));
 
@@ -262,29 +268,34 @@ describe('VocabularyScreen — create word', () => {
     expect(screen.getByText('Definition')).toBeTruthy();
   });
 
-  it('does not call create when term is empty', async () => {
+  it('does not call save when term is empty', async () => {
     await openModal();
     fireEvent.press(screen.getByText('Save'));
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockSave).not.toHaveBeenCalled();
   });
 
-  it('does not call create when term is only whitespace', async () => {
+  it('does not call save when term is only whitespace', async () => {
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), '   ');
     fireEvent.press(screen.getByText('Save'));
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockSave).not.toHaveBeenCalled();
   });
 
-  it('calls create with term only when definition is blank', async () => {
+  it('calls save with originalWord and empty translatedWord when definition is blank', async () => {
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
     await act(async () => {
       fireEvent.press(screen.getByText('Save'));
     });
-    expect(mockCreate).toHaveBeenCalledWith({ term: 'Serendipity', definition: undefined });
+    expect(mockSave).toHaveBeenCalledWith({
+      originalWord: 'Serendipity',
+      originalLanguage: 'ENGLISH',
+      translatedWord: '',
+      translatedLanguage: 'RUSSIAN',
+    });
   });
 
-  it('calls create with both term and definition', async () => {
+  it('calls save with both originalWord and translatedWord', async () => {
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
     fireEvent.changeText(
@@ -294,21 +305,26 @@ describe('VocabularyScreen — create word', () => {
     await act(async () => {
       fireEvent.press(screen.getByText('Save'));
     });
-    expect(mockCreate).toHaveBeenCalledWith({ term: 'Serendipity', definition: 'Happy chance' });
+    expect(mockSave).toHaveBeenCalledWith({
+      originalWord: 'Serendipity',
+      originalLanguage: 'ENGLISH',
+      translatedWord: 'Happy chance',
+      translatedLanguage: 'RUSSIAN',
+    });
   });
 
-  it('trims whitespace from term before creating', async () => {
+  it('trims whitespace from originalWord before saving', async () => {
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), '  Serendipity  ');
     await act(async () => {
       fireEvent.press(screen.getByText('Save'));
     });
-    expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ term: 'Serendipity' })
+    expect(mockSave).toHaveBeenCalledWith(
+      expect.objectContaining({ originalWord: 'Serendipity' })
     );
   });
 
-  it('prepends created word to the list', async () => {
+  it('prepends created phrase to the list', async () => {
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
     await act(async () => {
@@ -359,12 +375,12 @@ describe('VocabularyScreen — edit word', () => {
     expect(screen.getByText('Edit word')).toBeTruthy();
   });
 
-  it('pre-fills term field with current word term', async () => {
+  it('pre-fills term field with current originalWord', async () => {
     await openEditModal();
     expect(screen.getByDisplayValue('Ephemeral')).toBeTruthy();
   });
 
-  it('pre-fills definition field with current word definition', async () => {
+  it('pre-fills definition field with current translatedWord', async () => {
     await openEditModal();
     expect(screen.getByDisplayValue('Lasting for a very short time')).toBeTruthy();
   });
@@ -385,12 +401,14 @@ describe('VocabularyScreen — edit word', () => {
       fireEvent.press(screen.getByText('Save changes'));
     });
     expect(mockUpdate).toHaveBeenCalledWith('1', {
-      term: 'Ephemeral Updated',
-      definition: 'Short-lived',
+      originalWord: 'Ephemeral Updated',
+      originalLanguage: 'ENGLISH',
+      translatedWord: 'Short-lived',
+      translatedLanguage: 'RUSSIAN',
     });
   });
 
-  it('updates word in the list after save', async () => {
+  it('updates phrase in the list after save', async () => {
     await openEditModal();
     fireEvent.changeText(screen.getByDisplayValue('Ephemeral'), 'Ephemeral Updated');
     await act(async () => {
@@ -399,7 +417,7 @@ describe('VocabularyScreen — edit word', () => {
     await waitFor(() => expect(screen.getByText('Ephemeral Updated')).toBeTruthy());
   });
 
-  it('clears definition field when definition is removed', async () => {
+  it('sends empty translatedWord when definition is cleared', async () => {
     await openEditModal();
     fireEvent.changeText(
       screen.getByDisplayValue('Lasting for a very short time'),
@@ -409,8 +427,10 @@ describe('VocabularyScreen — edit word', () => {
       fireEvent.press(screen.getByText('Save changes'));
     });
     expect(mockUpdate).toHaveBeenCalledWith('1', {
-      term: 'Ephemeral',
-      definition: undefined,
+      originalWord: 'Ephemeral',
+      originalLanguage: 'ENGLISH',
+      translatedWord: '',
+      translatedLanguage: 'RUSSIAN',
     });
   });
 
@@ -446,7 +466,7 @@ describe('VocabularyScreen — delete word', () => {
     );
   });
 
-  it('calls wordsApi.delete when Delete is confirmed', async () => {
+  it('calls phrasesApi.delete when Delete is confirmed', async () => {
     (Alert.alert as jest.Mock).mockImplementationOnce((_title, _msg, buttons) => {
       const deleteBtn = buttons.find((b: any) => b.text === 'Delete');
       deleteBtn?.onPress?.();
@@ -461,7 +481,7 @@ describe('VocabularyScreen — delete word', () => {
     await waitFor(() => expect(mockDelete).toHaveBeenCalledWith('1'));
   });
 
-  it('removes deleted word from the list', async () => {
+  it('removes deleted phrase from the list', async () => {
     (Alert.alert as jest.Mock).mockImplementationOnce((_title, _msg, buttons) => {
       const deleteBtn = buttons.find((b: any) => b.text === 'Delete');
       deleteBtn?.onPress?.();
@@ -491,7 +511,7 @@ describe('VocabularyScreen — delete word', () => {
     expect(mockDelete).not.toHaveBeenCalled();
   });
 
-  it('keeps word in list when Cancel is pressed', async () => {
+  it('keeps phrase in list when Cancel is pressed', async () => {
     (Alert.alert as jest.Mock).mockImplementationOnce((_title, _msg, buttons) => {
       const cancelBtn = buttons.find((b: any) => b.text === 'Cancel');
       cancelBtn?.onPress?.();

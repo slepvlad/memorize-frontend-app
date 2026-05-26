@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { wordsApi, WordResponse } from '../../src/api/words';
+import { phrasesApi, PhraseResponse, LANGUAGE_TO_API } from '../../src/api/phrases';
 import { dictionaryApi, translationApi } from '../../src/api/dictionary';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
@@ -24,7 +24,7 @@ const PAGE_SIZE = 20;
 type ModalMode = 'create' | 'edit';
 
 export default function VocabularyScreen() {
-  const [words, setWords] = useState<WordResponse[]>([]);
+  const [phrases, setPhrases] = useState<PhraseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -34,7 +34,7 @@ export default function VocabularyScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<ModalMode>('create');
-  const [editingWord, setEditingWord] = useState<WordResponse | null>(null);
+  const [editingPhrase, setEditingPhrase] = useState<PhraseResponse | null>(null);
   const [term, setTerm] = useState('');
   const [definition, setDefinition] = useState('');
   const [saving, setSaving] = useState(false);
@@ -44,8 +44,8 @@ export default function VocabularyScreen() {
 
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     try {
-      const data = await wordsApi.getAll(pageNum, PAGE_SIZE);
-      setWords(prev => (append ? [...prev, ...data.content] : data.content));
+      const data = await phrasesApi.getAll(pageNum, PAGE_SIZE);
+      setPhrases(prev => (append ? [...prev, ...data.content] : data.content));
       setHasMore(!data.last);
       setPage(pageNum);
       setTotalElements(data.totalElements);
@@ -79,17 +79,17 @@ export default function VocabularyScreen() {
 
   const openCreateModal = () => {
     setModalMode('create');
-    setEditingWord(null);
+    setEditingPhrase(null);
     setTerm('');
     setDefinition('');
     setModalVisible(true);
   };
 
-  const openEditModal = (word: WordResponse) => {
+  const openEditModal = (phrase: PhraseResponse) => {
     setModalMode('edit');
-    setEditingWord(word);
-    setTerm(word.term);
-    setDefinition(word.definition ?? '');
+    setEditingPhrase(phrase);
+    setTerm(phrase.originalWord);
+    setDefinition(phrase.translatedWord ?? '');
     setModalVisible(true);
   };
 
@@ -97,7 +97,7 @@ export default function VocabularyScreen() {
     setModalVisible(false);
     setTerm('');
     setDefinition('');
-    setEditingWord(null);
+    setEditingPhrase(null);
     setLookingUpDefinition(false);
   };
 
@@ -132,17 +132,39 @@ export default function VocabularyScreen() {
     if (!trimmedTerm || saving) return;
     setSaving(true);
     try {
-      const payload = {
-        term: trimmedTerm,
-        definition: definition.trim() || undefined,
-      };
+      const originalLanguage = LANGUAGE_TO_API[studiedLanguage ?? ''] ?? 'ENGLISH';
+      const translatedLanguage = LANGUAGE_TO_API[nativeLanguage ?? ''] ?? 'RUSSIAN';
       if (modalMode === 'create') {
-        const created = await wordsApi.create(payload);
-        setWords(prev => [created, ...prev]);
+        const result = await phrasesApi.save({
+          originalWord: trimmedTerm,
+          originalLanguage,
+          translatedWord: definition.trim(),
+          translatedLanguage,
+        });
+        const newPhrase: PhraseResponse = {
+          id: result.id,
+          originalWord: trimmedTerm,
+          originalLanguage,
+          translatedWord: definition.trim(),
+          translatedLanguage,
+          originalAudioId: null,
+          translatedAudioId: null,
+          examples: [],
+          interval: 1,
+          repetitions: 0,
+          easiness_factor: 2.5,
+          next_review_date: new Date().toISOString(),
+        };
+        setPhrases(prev => [newPhrase, ...prev]);
         setTotalElements(prev => prev + 1);
-      } else if (editingWord) {
-        const updated = await wordsApi.update(editingWord.id, payload);
-        setWords(prev => prev.map(w => (w.id === updated.id ? updated : w)));
+      } else if (editingPhrase) {
+        const updated = await phrasesApi.update(editingPhrase.id, {
+          originalWord: trimmedTerm,
+          originalLanguage: editingPhrase.originalLanguage,
+          translatedWord: definition.trim(),
+          translatedLanguage: editingPhrase.translatedLanguage,
+        });
+        setPhrases(prev => prev.map(p => (p.id === updated.id ? updated : p)));
       }
       closeModal();
     } finally {
@@ -150,10 +172,10 @@ export default function VocabularyScreen() {
     }
   };
 
-  const handleDeletePress = (word: WordResponse) => {
+  const handleDeletePress = (phrase: PhraseResponse) => {
     Alert.alert(
       'Delete word',
-      `Remove "${word.term}" from your vocabulary?`,
+      `Remove "${phrase.originalWord}" from your vocabulary?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -161,8 +183,8 @@ export default function VocabularyScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await wordsApi.delete(word.id);
-              setWords(prev => prev.filter(w => w.id !== word.id));
+              await phrasesApi.delete(phrase.id);
+              setPhrases(prev => prev.filter(p => p.id !== phrase.id));
               setTotalElements(prev => Math.max(0, prev - 1));
             } catch {
               // handled globally
@@ -173,13 +195,13 @@ export default function VocabularyScreen() {
     );
   };
 
-  const renderItem = ({ item }: { item: WordResponse }) => (
+  const renderItem = ({ item }: { item: PhraseResponse }) => (
     <View style={styles.wordRow}>
       <View style={styles.wordInfo}>
-        <Text style={styles.wordTerm}>{item.term}</Text>
-        {item.definition ? (
+        <Text style={styles.wordTerm}>{item.originalWord}</Text>
+        {item.translatedWord ? (
           <Text style={styles.wordDefinition} numberOfLines={1}>
-            {item.definition}
+            {item.translatedWord}
           </Text>
         ) : null}
       </View>
@@ -206,7 +228,7 @@ export default function VocabularyScreen() {
           style={styles.iconBtn}
           onPress={() => openEditModal(item)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityLabel={`Edit ${item.term}`}
+          accessibilityLabel={`Edit ${item.originalWord}`}
         >
           <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -214,7 +236,7 @@ export default function VocabularyScreen() {
           style={styles.iconBtn}
           onPress={() => handleDeletePress(item)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityLabel={`Delete ${item.term}`}
+          accessibilityLabel={`Delete ${item.originalWord}`}
         >
           <Ionicons name="trash-outline" size={18} color={colors.danger} />
         </TouchableOpacity>
@@ -246,11 +268,11 @@ export default function VocabularyScreen() {
         <ActivityIndicator color={colors.primary} style={styles.centered} />
       ) : (
         <FlatList
-          data={words}
+          data={phrases}
           keyExtractor={item => item.id}
           renderItem={renderItem}
           contentContainerStyle={
-            words.length === 0 ? styles.emptyContainer : styles.listContent
+            phrases.length === 0 ? styles.emptyContainer : styles.listContent
           }
           showsVerticalScrollIndicator={false}
           refreshControl={
