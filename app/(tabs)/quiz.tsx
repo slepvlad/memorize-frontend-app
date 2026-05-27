@@ -2,48 +2,57 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { wordsApi, WordResponse } from '../../src/api/words';
+import { wordsApi } from '../../src/api/words';
+import { phrasesApi } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
 
+interface QuizItem {
+  id: string;
+  question: string;
+  answer: string;
+  type: 'word' | 'phrase';
+  next_review_date: string;
+}
+
 interface QuizQuestion {
-  wordId: string;
-  term: string;
+  itemId: string;
+  itemType: 'word' | 'phrase';
+  question: string;
   options: string[];
   correctIndex: number;
 }
 
 interface QuizResult {
-  wordId: string;
-  term: string;
+  itemId: string;
+  itemType: 'word' | 'phrase';
+  question: string;
   correct: boolean;
 }
 
-function getDueWords(words: WordResponse[]): WordResponse[] {
+function getDueItems(items: QuizItem[]): QuizItem[] {
   const now = new Date();
-  return words.filter((w) => new Date(w.next_review_date) <= now);
+  return items.filter((item) => new Date(item.next_review_date) <= now);
 }
 
-function buildQuestions(dueWords: WordResponse[], allWords: WordResponse[]): QuizQuestion[] {
-  return dueWords
-    .filter((w) => w.definition)
-    .map((word) => {
-      const distractors = allWords
-        .filter((w) => w.id !== word.id && w.definition)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-        .map((w) => w.definition as string);
+function buildQuestions(dueItems: QuizItem[], allItems: QuizItem[]): QuizQuestion[] {
+  return dueItems.map((item) => {
+    const distractors = allItems
+      .filter((i) => !(i.id === item.id && i.type === item.type))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map((i) => i.answer);
 
-      const correctDef = word.definition as string;
-      const allOptions = [...distractors, correctDef].sort(() => Math.random() - 0.5);
-      const correctIndex = allOptions.indexOf(correctDef);
+    const allOptions = [...distractors, item.answer].sort(() => Math.random() - 0.5);
+    const correctIndex = allOptions.indexOf(item.answer);
 
-      return {
-        wordId: word.id,
-        term: word.term,
-        options: allOptions,
-        correctIndex,
-      };
-    });
+    return {
+      itemId: item.id,
+      itemType: item.type,
+      question: item.question,
+      options: allOptions,
+      correctIndex,
+    };
+  });
 }
 
 export default function QuizScreen() {
@@ -59,13 +68,34 @@ export default function QuizScreen() {
   const loadQuiz = useCallback(async () => {
     setLoading(true);
     try {
-      const page = await wordsApi.getAll(0, 200);
-      const all = page.content;
-      const due = getDueWords(all);
+      const [wordsPage, phrasesPage] = await Promise.all([
+        wordsApi.getAll(0, 200),
+        phrasesApi.getAll(0, 200),
+      ]);
+
+      const wordItems: QuizItem[] = wordsPage.content
+        .filter((w) => w.definition)
+        .map((w) => ({
+          id: w.id,
+          question: w.term,
+          answer: w.definition as string,
+          type: 'word',
+          next_review_date: w.next_review_date,
+        }));
+
+      const phraseItems: QuizItem[] = phrasesPage.content.map((p) => ({
+        id: p.id,
+        question: p.originalWord,
+        answer: p.translatedWord,
+        type: 'phrase',
+        next_review_date: p.next_review_date,
+      }));
+
+      const allItems = [...wordItems, ...phraseItems];
+      const due = getDueItems(allItems);
       setDueCount(due.length);
 
-      // Need at least 4 words total for distractors, and at least 1 due word with a definition
-      const qs = all.length >= 4 ? buildQuestions(due, all) : [];
+      const qs = allItems.length >= 4 ? buildQuestions(due, allItems) : [];
       setQuestions(qs);
       setCurrentQ(0);
       setSelected(null);
@@ -89,9 +119,13 @@ export default function QuizScreen() {
     const correct = index === q.correctIndex;
     setSelected(index);
     setAnswered(true);
-    setResults((prev) => [...prev, { wordId: q.wordId, term: q.term, correct }]);
+    setResults((prev) => [...prev, { itemId: q.itemId, itemType: q.itemType, question: q.question, correct }]);
     try {
-      await wordsApi.review(q.wordId, correct);
+      if (q.itemType === 'phrase') {
+        await phrasesApi.review(q.itemId, correct);
+      } else {
+        await wordsApi.review(q.itemId, correct);
+      }
     } catch {
       // review errors are handled globally
     }
@@ -154,12 +188,12 @@ export default function QuizScreen() {
             />
           </View>
           <Text style={styles.emptyTitle}>
-            {isEmpty ? 'All caught up!' : 'Not enough words'}
+            {isEmpty ? 'All caught up!' : 'Not enough cards'}
           </Text>
           <Text style={styles.emptySubtitle}>
             {isEmpty
-              ? 'No words are due for review right now. Come back later.'
-              : 'Add at least 4 words with definitions to start a quiz.'}
+              ? 'Nothing is due for review right now. Come back later.'
+              : 'Add at least 4 words or phrases to start a quiz.'}
           </Text>
         </View>
       </SafeAreaView>
@@ -207,7 +241,7 @@ export default function QuizScreen() {
                 size={20}
                 color={r.correct ? colors.success : colors.danger}
               />
-              <Text style={styles.resultTerm}>{r.term}</Text>
+              <Text style={styles.resultTerm}>{r.question}</Text>
             </View>
           ))}
 
@@ -263,8 +297,8 @@ export default function QuizScreen() {
 
         {/* Question */}
         <View style={styles.questionArea}>
-          <Text style={styles.questionLabel}>What does this word mean?</Text>
-          <Text style={styles.questionWord}>{question.term}</Text>
+          <Text style={styles.questionLabel}>What does this mean?</Text>
+          <Text style={styles.questionWord}>{question.question}</Text>
         </View>
 
         {/* Options */}
