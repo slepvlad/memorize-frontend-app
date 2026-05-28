@@ -2,53 +2,41 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { wordsApi } from '../../src/api/words';
-import { phrasesApi } from '../../src/api/phrases';
+import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
 
-interface QuizItem {
-  id: string;
-  question: string;
-  answer: string;
-  type: 'word' | 'phrase';
-  next_review_date: string;
-}
-
 interface QuizQuestion {
-  itemId: string;
-  itemType: 'word' | 'phrase';
+  phraseId: string;
   question: string;
   options: string[];
   correctIndex: number;
 }
 
 interface QuizResult {
-  itemId: string;
-  itemType: 'word' | 'phrase';
+  phraseId: string;
   question: string;
   correct: boolean;
 }
 
-function getDueItems(items: QuizItem[]): QuizItem[] {
+function getDuePhrases(phrases: PhraseResponse[]): PhraseResponse[] {
   const now = new Date();
-  return items.filter((item) => new Date(item.next_review_date) <= now);
+  return phrases.filter((p) => new Date(p.next_review_date) <= now);
 }
 
-function buildQuestions(dueItems: QuizItem[], allItems: QuizItem[]): QuizQuestion[] {
-  return dueItems.map((item) => {
-    const distractors = allItems
-      .filter((i) => !(i.id === item.id && i.type === item.type))
+function buildQuestions(duePhrases: PhraseResponse[], allPhrases: PhraseResponse[]): QuizQuestion[] {
+  return duePhrases.map((phrase) => {
+    const distractors = allPhrases
+      .filter((p) => p.id !== phrase.id)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
-      .map((i) => i.answer);
+      .map((p) => p.translatedWord);
 
-    const allOptions = [...distractors, item.answer].sort(() => Math.random() - 0.5);
-    const correctIndex = allOptions.indexOf(item.answer);
+    const allOptions = [...distractors, phrase.translatedWord].sort(() => Math.random() - 0.5);
+    const correctIndex = allOptions.indexOf(phrase.translatedWord);
 
     return {
-      itemId: item.id,
-      itemType: item.type,
-      question: item.question,
+      phraseId: phrase.id,
+      question: phrase.originalWord,
       options: allOptions,
       correctIndex,
     };
@@ -68,34 +56,12 @@ export default function QuizScreen() {
   const loadQuiz = useCallback(async () => {
     setLoading(true);
     try {
-      const [wordsPage, phrasesPage] = await Promise.all([
-        wordsApi.getAll(0, 200),
-        phrasesApi.getAll(0, 200),
-      ]);
-
-      const wordItems: QuizItem[] = wordsPage.content
-        .filter((w) => w.definition)
-        .map((w) => ({
-          id: w.id,
-          question: w.term,
-          answer: w.definition as string,
-          type: 'word',
-          next_review_date: w.next_review_date,
-        }));
-
-      const phraseItems: QuizItem[] = phrasesPage.content.map((p) => ({
-        id: p.id,
-        question: p.originalWord,
-        answer: p.translatedWord,
-        type: 'phrase',
-        next_review_date: p.next_review_date,
-      }));
-
-      const allItems = [...wordItems, ...phraseItems];
-      const due = getDueItems(allItems);
+      const page = await phrasesApi.getAll(0, 200);
+      const all = page.content;
+      const due = getDuePhrases(all);
       setDueCount(due.length);
 
-      const qs = allItems.length >= 4 ? buildQuestions(due, allItems) : [];
+      const qs = all.length >= 4 ? buildQuestions(due, all) : [];
       setQuestions(qs);
       setCurrentQ(0);
       setSelected(null);
@@ -119,13 +85,9 @@ export default function QuizScreen() {
     const correct = index === q.correctIndex;
     setSelected(index);
     setAnswered(true);
-    setResults((prev) => [...prev, { itemId: q.itemId, itemType: q.itemType, question: q.question, correct }]);
+    setResults((prev) => [...prev, { phraseId: q.phraseId, question: q.question, correct }]);
     try {
-      if (q.itemType === 'phrase') {
-        await phrasesApi.review(q.itemId, correct);
-      } else {
-        await wordsApi.review(q.itemId, correct);
-      }
+      await phrasesApi.review(q.phraseId, correct);
     } catch {
       // review errors are handled globally
     }
@@ -188,12 +150,12 @@ export default function QuizScreen() {
             />
           </View>
           <Text style={styles.emptyTitle}>
-            {isEmpty ? 'All caught up!' : 'Not enough cards'}
+            {isEmpty ? 'All caught up!' : 'Not enough phrases'}
           </Text>
           <Text style={styles.emptySubtitle}>
             {isEmpty
               ? 'Nothing is due for review right now. Come back later.'
-              : 'Add at least 4 words or phrases to start a quiz.'}
+              : 'Add at least 4 phrases to start a quiz.'}
           </Text>
         </View>
       </SafeAreaView>
