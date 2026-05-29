@@ -9,7 +9,6 @@ export default function LearnScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [reviewing, setReviewing] = useState(false);
 
   const loadPhrases = useCallback(async () => {
     setLoading(true);
@@ -31,17 +30,10 @@ export default function LearnScreen() {
 
   const handleFlip = () => setIsFlipped(!isFlipped);
 
-  const handleReview = async (correct: boolean) => {
-    if (reviewing || phrases.length === 0) return;
-    const phrase = phrases[currentIndex];
-    setReviewing(true);
-    try {
-      await phrasesApi.review(phrase.id, correct);
-    } finally {
-      setReviewing(false);
-      setIsFlipped(false);
-      setCurrentIndex((prev) => (prev < phrases.length - 1 ? prev + 1 : 0));
-    }
+  const handleNext = () => {
+    if (phrases.length === 0) return;
+    setIsFlipped(false);
+    setCurrentIndex((prev) => (prev < phrases.length - 1 ? prev + 1 : 0));
   };
 
   if (loading) {
@@ -115,27 +107,15 @@ export default function LearnScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Difficulty buttons */}
+        {/* Navigation buttons */}
         <View style={styles.difficultyRow}>
-          <TouchableOpacity
-            style={styles.diffButton}
-            onPress={() => handleReview(false)}
-            disabled={reviewing}
-          >
+          <TouchableOpacity style={styles.diffButton} onPress={handleNext}>
             <Text style={[styles.diffText, { color: colors.danger }]}>Hard</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.diffButton}
-            onPress={() => handleReview(true)}
-            disabled={reviewing}
-          >
+          <TouchableOpacity style={styles.diffButton} onPress={handleNext}>
             <Text style={[styles.diffText, { color: colors.warning }]}>Good</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.diffButton}
-            onPress={() => handleReview(true)}
-            disabled={reviewing}
-          >
+          <TouchableOpacity style={styles.diffButton} onPress={handleNext}>
             <Text style={[styles.diffText, { color: colors.success }]}>Easy</Text>
           </TouchableOpacity>
         </View>
