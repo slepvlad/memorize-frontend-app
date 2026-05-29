@@ -1,53 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { wordsApi } from '../../src/api/words';
-import { phrasesApi } from '../../src/api/phrases';
+import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
 
-interface FlashCard {
-  id: string;
-  front: string;
-  back: string | undefined;
-  frontLabel: string;
-  backLabel: string;
-  type: 'word' | 'phrase';
-}
-
 export default function LearnScreen() {
-  const [cards, setCards] = useState<FlashCard[]>([]);
+  const [phrases, setPhrases] = useState<PhraseResponse[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState(false);
 
-  const loadCards = useCallback(async () => {
+  const loadPhrases = useCallback(async () => {
     setLoading(true);
     try {
-      const [wordsPage, phrasesPage] = await Promise.all([
-        wordsApi.getAll(0, 100),
-        phrasesApi.getAll(0, 100),
-      ]);
-
-      const wordCards: FlashCard[] = wordsPage.content.map((w) => ({
-        id: w.id,
-        front: w.term,
-        back: w.definition,
-        frontLabel: 'Term',
-        backLabel: 'Definition',
-        type: 'word',
-      }));
-
-      const phraseCards: FlashCard[] = phrasesPage.content.map((p) => ({
-        id: p.id,
-        front: p.originalWord,
-        back: p.translatedWord,
-        frontLabel: 'Phrase',
-        backLabel: 'Translation',
-        type: 'phrase',
-      }));
-
-      setCards([...wordCards, ...phraseCards]);
+      const page = await phrasesApi.getAll(0, 100);
+      setPhrases(page.content);
       setCurrentIndex(0);
       setIsFlipped(false);
     } catch {
@@ -58,25 +26,21 @@ export default function LearnScreen() {
   }, []);
 
   useEffect(() => {
-    void loadCards();
-  }, [loadCards]);
+    void loadPhrases();
+  }, [loadPhrases]);
 
   const handleFlip = () => setIsFlipped(!isFlipped);
 
   const handleReview = async (correct: boolean) => {
-    if (reviewing || cards.length === 0) return;
-    const card = cards[currentIndex];
+    if (reviewing || phrases.length === 0) return;
+    const phrase = phrases[currentIndex];
     setReviewing(true);
     try {
-      if (card.type === 'phrase') {
-        await phrasesApi.review(card.id, correct);
-      } else {
-        await wordsApi.review(card.id, correct);
-      }
+      await phrasesApi.review(phrase.id, correct);
     } finally {
       setReviewing(false);
       setIsFlipped(false);
-      setCurrentIndex((prev) => (prev < cards.length - 1 ? prev + 1 : 0));
+      setCurrentIndex((prev) => (prev < phrases.length - 1 ? prev + 1 : 0));
     }
   };
 
@@ -90,18 +54,18 @@ export default function LearnScreen() {
     );
   }
 
-  if (cards.length === 0) {
+  if (phrases.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>No cards yet</Text>
-          <Text style={styles.emptySubtitle}>Add words or phrases from the Home tab to start learning.</Text>
+          <Text style={styles.emptyTitle}>No phrases yet</Text>
+          <Text style={styles.emptySubtitle}>Add phrases from the Translate tab to start learning.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const card = cards[currentIndex];
+  const phrase = phrases[currentIndex];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,13 +74,13 @@ export default function LearnScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Learn</Text>
           <Text style={styles.counter}>
-            {currentIndex + 1} of {cards.length}
+            {currentIndex + 1} of {phrases.length}
           </Text>
         </View>
 
         {/* Progress bar */}
         <View style={styles.progressTrack}>
-          {cards.map((_, i) => (
+          {phrases.map((_, i) => (
             <View
               key={i}
               style={[
@@ -136,19 +100,17 @@ export default function LearnScreen() {
           {!isFlipped ? (
             <View style={styles.cardFront}>
               <View style={[styles.pill, { backgroundColor: colors.infoLight }]}>
-                <Text style={[styles.pillText, { color: colors.info }]}>{card.frontLabel}</Text>
+                <Text style={[styles.pillText, { color: colors.info }]}>Phrase</Text>
               </View>
-              <Text style={styles.wordText}>{card.front}</Text>
-              <Text style={styles.flipHint}>Tap to reveal</Text>
+              <Text style={styles.wordText}>{phrase.originalWord}</Text>
+              <Text style={styles.flipHint}>Tap to reveal translation</Text>
             </View>
           ) : (
             <View style={styles.cardBack}>
               <View style={[styles.pill, { backgroundColor: colors.successLight }]}>
-                <Text style={[styles.pillText, { color: colors.success }]}>{card.backLabel}</Text>
+                <Text style={[styles.pillText, { color: colors.success }]}>Translation</Text>
               </View>
-              <Text style={styles.definition}>
-                {card.back || 'No definition provided.'}
-              </Text>
+              <Text style={styles.definition}>{phrase.translatedWord}</Text>
             </View>
           )}
         </TouchableOpacity>

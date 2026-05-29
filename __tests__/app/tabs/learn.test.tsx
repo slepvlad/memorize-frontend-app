@@ -1,31 +1,14 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import LearnScreen from '../../../app/(tabs)/learn';
-import { wordsApi } from '../../../src/api/words';
 import { phrasesApi } from '../../../src/api/phrases';
-
-jest.mock('../../../src/api/words', () => ({
-  wordsApi: { getAll: jest.fn(), review: jest.fn() },
-}));
 
 jest.mock('../../../src/api/phrases', () => ({
   phrasesApi: { getAll: jest.fn(), review: jest.fn() },
 }));
 
-const mockWordsGetAll = wordsApi.getAll as jest.Mock;
-const mockWordsReview = wordsApi.review as jest.Mock;
-const mockPhrasesGetAll = phrasesApi.getAll as jest.Mock;
-const mockPhrasesReview = phrasesApi.review as jest.Mock;
-
-const makeWord = (id: string, term: string, definition: string, repetitions = 0) => ({
-  id,
-  term,
-  definition,
-  interval: 1,
-  repetitions,
-  easiness_factor: 2.5,
-  next_review_date: '2026-04-09',
-});
+const mockGetAll = phrasesApi.getAll as jest.Mock;
+const mockReview = phrasesApi.review as jest.Mock;
 
 const makePhrase = (id: string, originalWord: string, translatedWord: string) => ({
   id,
@@ -42,27 +25,13 @@ const makePhrase = (id: string, originalWord: string, translatedWord: string) =>
   next_review_date: '2026-04-09',
 });
 
-const mockWords = [
-  makeWord('1', 'Ephemeral', 'Lasting for a very short time'),
-  makeWord('2', 'Ubiquitous', 'Present everywhere', 2),
-  makeWord('3', 'Eloquent', 'Fluent and persuasive in speech'),
-];
-
 const mockPhrases = [
   makePhrase('p1', 'Hello world', 'Привет мир'),
+  makePhrase('p2', 'Good morning', 'Доброе утро'),
+  makePhrase('p3', 'Thank you', 'Спасибо'),
 ];
 
-const makeWordPage = (words = mockWords) => ({
-  content: words,
-  totalElements: words.length,
-  totalPages: 1,
-  numberOfElements: words.length,
-  first: true,
-  last: true,
-  empty: words.length === 0,
-});
-
-const makePhrasePage = (phrases = mockPhrases) => ({
+const makePage = (phrases = mockPhrases) => ({
   content: phrases,
   totalElements: phrases.length,
   totalPages: 1,
@@ -74,16 +43,13 @@ const makePhrasePage = (phrases = mockPhrases) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockWordsGetAll.mockResolvedValue(makeWordPage());
-  mockPhrasesGetAll.mockResolvedValue(makePhrasePage([]));
-  mockWordsReview.mockResolvedValue({ ...mockWords[0], repetitions: 1 });
-  mockPhrasesReview.mockResolvedValue({ ...mockPhrases[0], repetitions: 1 });
+  mockGetAll.mockResolvedValue(makePage());
+  mockReview.mockResolvedValue({ ...mockPhrases[0], repetitions: 1 });
 });
 
 describe('LearnScreen — loading state', () => {
   it('shows activity indicator while fetching', () => {
-    mockWordsGetAll.mockReturnValue(new Promise(() => {}));
-    mockPhrasesGetAll.mockReturnValue(new Promise(() => {}));
+    mockGetAll.mockReturnValue(new Promise(() => {}));
     render(<LearnScreen />);
     const { ActivityIndicator } = require('react-native');
     expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
@@ -91,25 +57,11 @@ describe('LearnScreen — loading state', () => {
 });
 
 describe('LearnScreen — empty state', () => {
-  it('shows empty message when no words or phrases exist', async () => {
-    mockWordsGetAll.mockResolvedValue(makeWordPage([]));
-    mockPhrasesGetAll.mockResolvedValue(makePhrasePage([]));
+  it('shows empty message when no phrases exist', async () => {
+    mockGetAll.mockResolvedValue(makePage([]));
     render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('No cards yet')).toBeTruthy());
-    expect(screen.getByText('Add words or phrases from the Home tab to start learning.')).toBeTruthy();
-  });
-
-  it('shows cards when words exist but phrases are empty', async () => {
-    mockPhrasesGetAll.mockResolvedValue(makePhrasePage([]));
-    render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('Ephemeral')).toBeTruthy());
-  });
-
-  it('shows cards when phrases exist but words are empty', async () => {
-    mockWordsGetAll.mockResolvedValue(makeWordPage([]));
-    mockPhrasesGetAll.mockResolvedValue(makePhrasePage());
-    render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('Hello world')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('No phrases yet')).toBeTruthy());
+    expect(screen.getByText('Add phrases from the Translate tab to start learning.')).toBeTruthy();
   });
 });
 
@@ -119,30 +71,24 @@ describe('LearnScreen — initial rendering', () => {
     await waitFor(() => expect(screen.getByText('Learn')).toBeTruthy());
   });
 
-  it('shows 1 of N counter for words only', async () => {
+  it('shows 1 of N counter', async () => {
     render(<LearnScreen />);
     await waitFor(() => expect(screen.getByText('1 of 3')).toBeTruthy());
   });
 
-  it('shows 1 of N counter combining words and phrases', async () => {
-    mockPhrasesGetAll.mockResolvedValue(makePhrasePage());
+  it('shows first phrase on front face', async () => {
     render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('1 of 4')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Hello world')).toBeTruthy());
   });
 
-  it('shows first word front on front face', async () => {
+  it('shows Phrase pill on front face', async () => {
     render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('Ephemeral')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Phrase')).toBeTruthy());
   });
 
-  it('shows Term pill on front face for word cards', async () => {
+  it('shows "Tap to reveal translation" hint', async () => {
     render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('Term')).toBeTruthy());
-  });
-
-  it('shows "Tap to reveal" hint', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('Tap to reveal')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Tap to reveal translation')).toBeTruthy());
   });
 
   it('renders Hard, Good, Easy difficulty buttons', async () => {
@@ -154,65 +100,13 @@ describe('LearnScreen — initial rendering', () => {
     });
   });
 
-  it('fetches words with page=0, size=100', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => expect(mockWordsGetAll).toHaveBeenCalledWith(0, 100));
-  });
-
   it('fetches phrases with page=0, size=100', async () => {
     render(<LearnScreen />);
-    await waitFor(() => expect(mockPhrasesGetAll).toHaveBeenCalledWith(0, 100));
+    await waitFor(() => expect(mockGetAll).toHaveBeenCalledWith(0, 100));
   });
 });
 
-describe('LearnScreen — word card flip', () => {
-  it('reveals definition when card is tapped', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    fireEvent.press(screen.getByText('Ephemeral'));
-    expect(screen.getByText('Lasting for a very short time')).toBeTruthy();
-  });
-
-  it('shows Definition pill after flip', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    fireEvent.press(screen.getByText('Ephemeral'));
-    expect(screen.getByText('Definition')).toBeTruthy();
-  });
-
-  it('hides "Tap to reveal" after flip', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    fireEvent.press(screen.getByText('Ephemeral'));
-    expect(screen.queryByText('Tap to reveal')).toBeNull();
-  });
-
-  it('shows "No definition provided." when word has no definition', async () => {
-    const wordNoDefinition = { ...makeWord('4', 'Laconic', ''), definition: undefined };
-    mockWordsGetAll.mockResolvedValue(makeWordPage([wordNoDefinition as any]));
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Laconic'));
-    fireEvent.press(screen.getByText('Laconic'));
-    expect(screen.getByText('No definition provided.')).toBeTruthy();
-  });
-});
-
-describe('LearnScreen — phrase card flip', () => {
-  beforeEach(() => {
-    mockWordsGetAll.mockResolvedValue(makeWordPage([]));
-    mockPhrasesGetAll.mockResolvedValue(makePhrasePage());
-  });
-
-  it('shows originalWord on front face', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('Hello world')).toBeTruthy());
-  });
-
-  it('shows Phrase pill on front face', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => expect(screen.getByText('Phrase')).toBeTruthy());
-  });
-
+describe('LearnScreen — card flip', () => {
   it('reveals translation when card is tapped', async () => {
     render(<LearnScreen />);
     await waitFor(() => screen.getByText('Hello world'));
@@ -226,110 +120,23 @@ describe('LearnScreen — phrase card flip', () => {
     fireEvent.press(screen.getByText('Hello world'));
     expect(screen.getByText('Translation')).toBeTruthy();
   });
-});
 
-describe('LearnScreen — word card difficulty navigation', () => {
-  it('calls wordsApi.review with correct=false on Hard press', async () => {
+  it('hides "Tap to reveal translation" after flip', async () => {
     render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Hard'));
-    await act(async () => {
-      fireEvent.press(screen.getByText('Hard'));
-    });
-    expect(mockWordsReview).toHaveBeenCalledWith('1', false);
-  });
-
-  it('calls wordsApi.review with correct=true on Good press', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Good'));
-    await act(async () => {
-      fireEvent.press(screen.getByText('Good'));
-    });
-    expect(mockWordsReview).toHaveBeenCalledWith('1', true);
-  });
-
-  it('calls wordsApi.review with correct=true on Easy press', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Easy'));
-    await act(async () => {
-      fireEvent.press(screen.getByText('Easy'));
-    });
-    expect(mockWordsReview).toHaveBeenCalledWith('1', true);
-  });
-
-  it('advances to next card after pressing Easy', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    await act(async () => {
-      fireEvent.press(screen.getByText('Easy'));
-    });
-    await waitFor(() => expect(screen.getByText('Ubiquitous')).toBeTruthy());
-    expect(screen.getByText('2 of 3')).toBeTruthy();
-  });
-
-  it('advances to next card after pressing Hard', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    await act(async () => {
-      fireEvent.press(screen.getByText('Hard'));
-    });
-    await waitFor(() => expect(screen.getByText('Ubiquitous')).toBeTruthy());
-  });
-
-  it('resets flip state when advancing to next card', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    fireEvent.press(screen.getByText('Ephemeral'));
-    expect(screen.getByText('Definition')).toBeTruthy();
-    await act(async () => {
-      fireEvent.press(screen.getByText('Easy'));
-    });
-    await waitFor(() => expect(screen.queryByText('Definition')).toBeNull());
-    expect(screen.getByText('Tap to reveal')).toBeTruthy();
-  });
-
-  it('wraps back to first card after last card', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
-    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
-    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
-    await waitFor(() => expect(screen.getByText('Ephemeral')).toBeTruthy());
-    expect(screen.getByText('1 of 3')).toBeTruthy();
-  });
-
-  it('shows second card on counter', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
-    await waitFor(() => expect(screen.getByText('2 of 3')).toBeTruthy());
-  });
-
-  it('shows third card on counter', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Ephemeral'));
-    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
-    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
-    await waitFor(() => {
-      expect(screen.getByText('Eloquent')).toBeTruthy();
-      expect(screen.getByText('3 of 3')).toBeTruthy();
-    });
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Hello world'));
+    expect(screen.queryByText('Tap to reveal translation')).toBeNull();
   });
 });
 
-describe('LearnScreen — phrase card difficulty navigation', () => {
-  beforeEach(() => {
-    mockWordsGetAll.mockResolvedValue(makeWordPage([]));
-    mockPhrasesGetAll.mockResolvedValue(makePhrasePage());
-  });
-
+describe('LearnScreen — difficulty navigation', () => {
   it('calls phrasesApi.review with correct=false on Hard press', async () => {
     render(<LearnScreen />);
     await waitFor(() => screen.getByText('Hard'));
     await act(async () => {
       fireEvent.press(screen.getByText('Hard'));
     });
-    expect(mockPhrasesReview).toHaveBeenCalledWith('p1', false);
-    expect(mockWordsReview).not.toHaveBeenCalled();
+    expect(mockReview).toHaveBeenCalledWith('p1', false);
   });
 
   it('calls phrasesApi.review with correct=true on Good press', async () => {
@@ -338,7 +145,7 @@ describe('LearnScreen — phrase card difficulty navigation', () => {
     await act(async () => {
       fireEvent.press(screen.getByText('Good'));
     });
-    expect(mockPhrasesReview).toHaveBeenCalledWith('p1', true);
+    expect(mockReview).toHaveBeenCalledWith('p1', true);
   });
 
   it('calls phrasesApi.review with correct=true on Easy press', async () => {
@@ -347,6 +154,65 @@ describe('LearnScreen — phrase card difficulty navigation', () => {
     await act(async () => {
       fireEvent.press(screen.getByText('Easy'));
     });
-    expect(mockPhrasesReview).toHaveBeenCalledWith('p1', true);
+    expect(mockReview).toHaveBeenCalledWith('p1', true);
+  });
+
+  it('advances to next card after pressing Easy', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    await act(async () => {
+      fireEvent.press(screen.getByText('Easy'));
+    });
+    await waitFor(() => expect(screen.getByText('Good morning')).toBeTruthy());
+    expect(screen.getByText('2 of 3')).toBeTruthy();
+  });
+
+  it('advances to next card after pressing Hard', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    await act(async () => {
+      fireEvent.press(screen.getByText('Hard'));
+    });
+    await waitFor(() => expect(screen.getByText('Good morning')).toBeTruthy());
+  });
+
+  it('resets flip state when advancing to next card', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Hello world')); // flip
+    expect(screen.getByText('Translation')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByText('Easy'));
+    });
+    await waitFor(() => expect(screen.queryByText('Translation')).toBeNull());
+    expect(screen.getByText('Tap to reveal translation')).toBeTruthy();
+  });
+
+  it('wraps back to first card after last card', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
+    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
+    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
+    await waitFor(() => expect(screen.getByText('Hello world')).toBeTruthy());
+    expect(screen.getByText('1 of 3')).toBeTruthy();
+  });
+
+  it('shows second card on counter', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
+    await waitFor(() => expect(screen.getByText('2 of 3')).toBeTruthy());
+  });
+
+  it('shows third card on counter', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
+    await act(async () => { fireEvent.press(screen.getByText('Easy')); });
+    await waitFor(() => {
+      expect(screen.getByText('Thank you')).toBeTruthy();
+      expect(screen.getByText('3 of 3')).toBeTruthy();
+    });
   });
 });
