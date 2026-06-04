@@ -56,6 +56,16 @@ export interface PhraseCreateResponse {
   id: string;
 }
 
+export interface PhraseUpdateRequest {
+  originalWord: string;
+  originalLanguage: ApiLanguage;
+  translatedWord: string;
+  translatedLanguage: ApiLanguage;
+  originalAudioId?: string | null;
+  translatedAudioId?: string | null;
+  examples?: Example[];
+}
+
 export interface ReviewRequest {
   correct: boolean;
 }
@@ -89,7 +99,7 @@ export const phrasesApi = {
     return data;
   },
 
-  update: async (id: string, request: PhraseCreateRequest): Promise<PhraseResponse> => {
+  update: async (id: string, request: PhraseUpdateRequest): Promise<PhraseResponse> => {
     const { data } = await apiClient.put<PhraseResponse>(`/api/v1/phrases/${id}`, request);
     return data;
   },

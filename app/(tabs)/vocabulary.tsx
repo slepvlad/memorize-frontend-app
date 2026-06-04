@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { phrasesApi, PhraseResponse, LANGUAGE_TO_API } from '../../src/api/phrases';
+import { phrasesApi, PhraseResponse, PhraseUpdateRequest, LANGUAGE_TO_API } from '../../src/api/phrases';
 import { dictionaryApi, translationApi } from '../../src/api/dictionary';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
@@ -158,12 +158,13 @@ export default function VocabularyScreen() {
         setPhrases(prev => [newPhrase, ...prev]);
         setTotalElements(prev => prev + 1);
       } else if (editingPhrase) {
-        const updated = await phrasesApi.update(editingPhrase.id, {
+        const payload: PhraseUpdateRequest = {
           originalWord: trimmedTerm,
           originalLanguage: editingPhrase.originalLanguage,
           translatedWord: definition.trim(),
           translatedLanguage: editingPhrase.translatedLanguage,
-        });
+        };
+        const updated = await phrasesApi.update(editingPhrase.id, payload);
         setPhrases(prev => prev.map(p => (p.id === updated.id ? updated : p)));
       }
       closeModal();
