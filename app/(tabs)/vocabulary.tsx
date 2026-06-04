@@ -16,7 +16,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { phrasesApi, PhraseResponse, PhraseUpdateRequest, LANGUAGE_TO_API } from '../../src/api/phrases';
-import { dictionaryApi, translationApi } from '../../src/api/dictionary';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
 
@@ -104,24 +103,16 @@ export default function VocabularyScreen() {
   const lookupAndPrefillDefinition = async (termValue: string) => {
     const trimmed = termValue.trim();
     if (!trimmed || modalMode !== 'create') return;
+    const sourceLanguage = LANGUAGE_TO_API[studiedLanguage ?? ''] ?? 'ENGLISH';
+    const targetLanguage = LANGUAGE_TO_API[nativeLanguage ?? ''] ?? 'RUSSIAN';
     setLookingUpDefinition(true);
     try {
-      const entry = await dictionaryApi.lookup(trimmed);
-      const firstDef = entry.meanings?.[0]?.definitions?.[0]?.definition ?? '';
-      if (firstDef) {
-        let text = firstDef;
-        if (studiedLanguage && nativeLanguage && studiedLanguage !== nativeLanguage) {
-          const result = await translationApi.translate({
-            text: firstDef,
-            source: studiedLanguage,
-            target: nativeLanguage,
-          });
-          text = result.translated_text;
-        }
-        setDefinition(prev => (prev.trim() === '' ? text : prev));
+      const result = await phrasesApi.lookup(trimmed, sourceLanguage, targetLanguage);
+      if (result.translatedWord) {
+        setDefinition(prev => (prev.trim() === '' ? result.translatedWord : prev));
       }
     } catch {
-      // silently ignore lookup or translation failures
+      // silently ignore lookup failures
     } finally {
       setLookingUpDefinition(false);
     }
@@ -345,7 +336,7 @@ export default function VocabularyScreen() {
               </View>
             )}
 
-            <Text style={styles.fieldLabel}>Definition</Text>
+            <Text style={styles.fieldLabel}>Translation *</Text>
             <TextInput
               style={[styles.input, styles.inputMultiline]}
               placeholder="e.g. Lasting for a very short time"
@@ -359,10 +350,10 @@ export default function VocabularyScreen() {
             <TouchableOpacity
               style={[
                 styles.saveButton,
-                (!term.trim() || saving) && styles.saveButtonDisabled,
+                (!term.trim() || !definition.trim() || saving) && styles.saveButtonDisabled,
               ]}
               onPress={handleSave}
-              disabled={!term.trim() || saving}
+              disabled={!term.trim() || !definition.trim() || saving}
             >
               {saving ? (
                 <ActivityIndicator color={colors.textInverse} size="small" />
