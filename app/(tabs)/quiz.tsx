@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
@@ -44,6 +45,8 @@ function buildQuestions(duePhrases: PhraseResponse[], allPhrases: PhraseResponse
 }
 
 export default function QuizScreen() {
+  const { phraseIds } = useLocalSearchParams<{ phraseIds?: string }>();
+  const [isLearnSession, setIsLearnSession] = useState(!!phraseIds);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentQ, setCurrentQ] = useState(0);
@@ -53,15 +56,23 @@ export default function QuizScreen() {
   const [finished, setFinished] = useState(false);
   const [dueCount, setDueCount] = useState(0);
 
-  const loadQuiz = useCallback(async () => {
+  const loadQuiz = useCallback(async (targetIds?: string) => {
     setLoading(true);
     try {
       const page = await phrasesApi.getAll(0, 200);
       const all = page.content;
-      const due = getDuePhrases(all);
-      setDueCount(due.length);
 
-      const qs = all.length >= 4 ? buildQuestions(due, all) : [];
+      let target: PhraseResponse[];
+      if (targetIds) {
+        const ids = new Set(targetIds.split(','));
+        target = all.filter((p) => ids.has(p.id));
+      } else {
+        const due = getDuePhrases(all);
+        setDueCount(due.length);
+        target = due;
+      }
+
+      const qs = all.length >= 4 ? buildQuestions(target, all) : [];
       setQuestions(qs);
       setCurrentQ(0);
       setSelected(null);
@@ -73,11 +84,16 @@ export default function QuizScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); // stable — no external deps, targetIds passed explicitly
 
   useEffect(() => {
-    void loadQuiz();
-  }, [loadQuiz]);
+    void loadQuiz(phraseIds);
+  }, [loadQuiz, phraseIds]);
+
+  const handleNewSession = () => {
+    setIsLearnSession(false);
+    void loadQuiz(); // fresh fetch, due-phrases mode — drops stale param context
+  };
 
   const handleSelect = async (index: number) => {
     if (answered || questions.length === 0) return;
@@ -138,7 +154,7 @@ export default function QuizScreen() {
   }
 
   if (questions.length === 0) {
-    const isEmpty = dueCount === 0;
+    const isEmpty = !isLearnSession && dueCount === 0;
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
@@ -207,7 +223,7 @@ export default function QuizScreen() {
             </View>
           ))}
 
-          <TouchableOpacity style={styles.nextButton} onPress={loadQuiz}>
+          <TouchableOpacity style={styles.nextButton} onPress={handleNewSession}>
             <Text style={styles.nextButtonText}>New session</Text>
             <Ionicons name="refresh" size={18} color={colors.textInverse} />
           </TouchableOpacity>
@@ -223,7 +239,14 @@ export default function QuizScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Quiz</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>Quiz</Text>
+            {isLearnSession && (
+              <View style={styles.sessionBadge}>
+                <Text style={styles.sessionBadgeText}>from Learn</Text>
+              </View>
+            )}
+          </View>
           <View style={styles.scoreBadge}>
             <Text style={styles.scoreText}>
               {results.filter((r) => r.correct).length}/{results.length > 0 ? results.length : 0}
@@ -357,10 +380,26 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: 4,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: colors.text,
+  },
+  sessionBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  sessionBadgeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.primary,
   },
   scoreBadge: {
     backgroundColor: colors.successLight,

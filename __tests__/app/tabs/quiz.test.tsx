@@ -2,6 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import QuizScreen from '../../../app/(tabs)/quiz';
 import { phrasesApi } from '../../../src/api/phrases';
+import { useLocalSearchParams } from 'expo-router';
+
+const mockUseLocalSearchParams = useLocalSearchParams as jest.Mock;
 
 jest.mock('../../../src/api/phrases', () => ({
   phrasesApi: { getAll: jest.fn(), review: jest.fn() },
@@ -48,6 +51,7 @@ beforeEach(() => {
   jest.spyOn(global.Math, 'random').mockReturnValue(0.5);
   mockGetAll.mockResolvedValue(makePage());
   mockReview.mockResolvedValue(mockPhrases[0]);
+  mockUseLocalSearchParams.mockReturnValue({});
 });
 
 afterEach(() => {
@@ -275,5 +279,86 @@ describe('QuizScreen — score display', () => {
     const option = options.find((t: any) => t.props.disabled !== true && t.props.onPress);
     if (option) fireEvent.press(option);
     expect(screen.getByText('1/2')).toBeTruthy();
+  });
+});
+
+describe('QuizScreen — learn session (phraseIds param)', () => {
+  it('shows "from Learn" badge when phraseIds param is provided', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ phraseIds: 'p1,p2,p3,p4' });
+    render(<QuizScreen />);
+    await waitFor(() => expect(screen.getByText('from Learn')).toBeTruthy());
+  });
+
+  it('does not show "from Learn" badge in normal mode', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByText('Quiz'));
+    expect(screen.queryByText('from Learn')).toBeNull();
+  });
+
+  it('builds questions from only the specified phrase IDs', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ phraseIds: 'p1,p2' });
+    render(<QuizScreen />);
+    // 4 total phrases available, 2 targeted → 2 questions
+    await waitFor(() => expect(screen.getByText('Question 1 of 2')).toBeTruthy());
+  });
+
+  it('shows "Not enough phrases" when total pool has fewer than 4 phrases', async () => {
+    mockGetAll.mockResolvedValue(makePage(mockPhrases.slice(0, 3)));
+    mockUseLocalSearchParams.mockReturnValue({ phraseIds: 'p1,p2' });
+    render(<QuizScreen />);
+    await waitFor(() => expect(screen.getByText('Not enough phrases')).toBeTruthy());
+  });
+
+  it('calls phrasesApi.review for learn-session answers', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ phraseIds: 'p1,p2,p3,p4' });
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByText('Привет мир'));
+    await act(async () => { fireEvent.press(screen.getByText('Привет мир')); });
+    expect(mockReview).toHaveBeenCalledWith('p1', true);
+  });
+});
+
+describe('QuizScreen — New session resets learn context', () => {
+  const completeQuiz = async () => {
+    await waitFor(() => screen.getByText('Привет мир'));
+    fireEvent.press(screen.getByText('Привет мир'));
+    await waitFor(() => screen.getByText('Next question'));
+    fireEvent.press(screen.getByText('Next question'));
+
+    await waitFor(() => screen.getByText('Доброе утро'));
+    fireEvent.press(screen.getByText('Доброе утро'));
+    await waitFor(() => screen.getByText('Next question'));
+    fireEvent.press(screen.getByText('Next question'));
+
+    await waitFor(() => screen.getByText('Спасибо'));
+    fireEvent.press(screen.getByText('Спасибо'));
+    await waitFor(() => screen.getByText('Next question'));
+    fireEvent.press(screen.getByText('Next question'));
+
+    await waitFor(() => screen.getByText('До свидания'));
+    fireEvent.press(screen.getByText('До свидания'));
+    await waitFor(() => screen.getByText('See results'));
+    fireEvent.press(screen.getByText('See results'));
+    await waitFor(() => screen.getByText('New session'));
+  };
+
+  it('removes "from Learn" badge after New session in a learn-session quiz', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ phraseIds: 'p1,p2,p3,p4' });
+    render(<QuizScreen />);
+    await completeQuiz();
+    await act(async () => { fireEvent.press(screen.getByText('New session')); });
+    await waitFor(() => expect(screen.queryByText('from Learn')).toBeNull());
+  });
+
+  it('re-fetches fresh data on New session (does not replay stale phraseIds)', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ phraseIds: 'p1,p2,p3,p4' });
+    render(<QuizScreen />);
+    await completeQuiz();
+    const callsBefore = mockGetAll.mock.calls.length;
+    await act(async () => { fireEvent.press(screen.getByText('New session')); });
+    expect(mockGetAll.mock.calls.length).toBeGreaterThan(callsBefore);
+    // new call must NOT pass phraseIds — it calls getAll(0, 200) for due-phrases
+    const lastCall = mockGetAll.mock.calls[mockGetAll.mock.calls.length - 1];
+    expect(lastCall).toEqual([0, 200]);
   });
 });

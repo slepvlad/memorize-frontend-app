@@ -36,5 +36,6 @@ module.exports = {
   Stack,
   Tabs,
   Redirect,
+  router: mockRouter,
   _mockRouter: mockRouter, // expose for assertions
 };

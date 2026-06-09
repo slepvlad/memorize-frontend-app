@@ -9,6 +9,7 @@ jest.mock('../../../src/api/phrases', () => ({
 
 const mockGetAll = phrasesApi.getAll as jest.Mock;
 const mockReview = phrasesApi.review as jest.Mock;
+const { _mockRouter } = require('expo-router');
 
 const makePhrase = (id: string, originalWord: string, translatedWord: string) => ({
   id,
@@ -29,6 +30,11 @@ const mockPhrases = [
   makePhrase('p1', 'Hello world', 'Привет мир'),
   makePhrase('p2', 'Good morning', 'Доброе утро'),
   makePhrase('p3', 'Thank you', 'Спасибо'),
+];
+
+const mockPhrasesFour = [
+  ...mockPhrases,
+  makePhrase('p4', 'Goodbye', 'До свидания'),
 ];
 
 const makePage = (phrases = mockPhrases) => ({
@@ -182,16 +188,6 @@ describe('LearnScreen — navigation (no review API calls)', () => {
     expect(screen.getByText('Tap to reveal translation')).toBeTruthy();
   });
 
-  it('wraps back to first card after last card', async () => {
-    render(<LearnScreen />);
-    await waitFor(() => screen.getByText('Hello world'));
-    fireEvent.press(screen.getByText('Easy'));
-    fireEvent.press(screen.getByText('Easy'));
-    fireEvent.press(screen.getByText('Easy'));
-    expect(screen.getByText('Hello world')).toBeTruthy();
-    expect(screen.getByText('1 of 3')).toBeTruthy();
-  });
-
   it('shows second card on counter', async () => {
     render(<LearnScreen />);
     await waitFor(() => screen.getByText('Hello world'));
@@ -206,5 +202,81 @@ describe('LearnScreen — navigation (no review API calls)', () => {
     fireEvent.press(screen.getByText('Easy'));
     expect(screen.getByText('Thank you')).toBeTruthy();
     expect(screen.getByText('3 of 3')).toBeTruthy();
+  });
+});
+
+describe('LearnScreen — session complete', () => {
+  it('shows "Session complete!" after last card', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    expect(screen.getByText('Session complete!')).toBeTruthy();
+  });
+
+  it('shows phrase count in subtitle', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    expect(screen.getByText('You reviewed 3 phrases.')).toBeTruthy();
+  });
+
+  it('shows "Study again" button on completion', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    expect(screen.getByText('Study again')).toBeTruthy();
+  });
+
+  it('shows disabled quiz hint when fewer than 4 phrases', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    expect(screen.getByText('Add at least 4 phrases to unlock the quiz.')).toBeTruthy();
+    expect(screen.queryByText('Quiz these phrases')).toBeNull();
+  });
+
+  it('shows "Quiz these phrases" button when 4+ phrases available', async () => {
+    mockGetAll.mockResolvedValue(makePage(mockPhrasesFour));
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    expect(screen.getByText('Quiz these phrases')).toBeTruthy();
+  });
+
+  it('navigates to quiz with all phrase IDs when "Quiz these phrases" pressed', async () => {
+    mockGetAll.mockResolvedValue(makePage(mockPhrasesFour));
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Quiz these phrases'));
+    expect(_mockRouter.push).toHaveBeenCalledWith({
+      pathname: '/(tabs)/quiz',
+      params: { phraseIds: 'p1,p2,p3,p4' },
+    });
+  });
+
+  it('"Study again" reloads the phrases', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    fireEvent.press(screen.getByText('Easy'));
+    await act(async () => { fireEvent.press(screen.getByText('Study again')); });
+    expect(mockGetAll.mock.calls.length).toBeGreaterThanOrEqual(2);
+    await waitFor(() => expect(screen.getByText('Hello world')).toBeTruthy());
   });
 });

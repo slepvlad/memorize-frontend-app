@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
 
@@ -9,6 +11,7 @@ export default function LearnScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [finished, setFinished] = useState(false);
 
   const loadPhrases = useCallback(async () => {
     setLoading(true);
@@ -17,6 +20,7 @@ export default function LearnScreen() {
       setPhrases(page.content);
       setCurrentIndex(0);
       setIsFlipped(false);
+      setFinished(false);
     } catch {
       // error handled globally by axios interceptor (toast)
     } finally {
@@ -33,7 +37,16 @@ export default function LearnScreen() {
   const handleNext = () => {
     if (phrases.length === 0) return;
     setIsFlipped(false);
-    setCurrentIndex((prev) => (prev < phrases.length - 1 ? prev + 1 : 0));
+    if (currentIndex < phrases.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    } else {
+      setFinished(true);
+    }
+  };
+
+  const handleStartQuiz = () => {
+    const ids = phrases.map((p) => p.id).join(',');
+    router.push({ pathname: '/(tabs)/quiz', params: { phraseIds: ids } });
   };
 
   if (loading) {
@@ -52,6 +65,41 @@ export default function LearnScreen() {
         <View style={styles.centered}>
           <Text style={styles.emptyTitle}>No phrases yet</Text>
           <Text style={styles.emptySubtitle}>Add phrases from the Translate tab to start learning.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (finished) {
+    const canQuiz = phrases.length >= 4;
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <View style={styles.completionIcon}>
+            <Ionicons name="checkmark-circle" size={64} color={colors.success} />
+          </View>
+          <Text style={styles.completionTitle}>Session complete!</Text>
+          <Text style={styles.completionSubtitle}>
+            You reviewed {phrases.length} {phrases.length === 1 ? 'phrase' : 'phrases'}.
+          </Text>
+
+          {canQuiz ? (
+            <TouchableOpacity style={styles.quizButton} onPress={handleStartQuiz}>
+              <Ionicons name="help-circle-outline" size={20} color={colors.textInverse} />
+              <Text style={styles.quizButtonText}>Quiz these phrases</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.quizDisabled}>
+              <Text style={styles.quizDisabledText}>
+                Add at least 4 phrases to unlock the quiz.
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.restartButton} onPress={loadPhrases}>
+            <Ionicons name="refresh" size={18} color={colors.primary} />
+            <Text style={styles.restartButtonText}>Study again</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -244,5 +292,67 @@ const styles = StyleSheet.create({
   diffText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  completionIcon: {
+    marginBottom: spacing.lg,
+  },
+  completionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  completionSubtitle: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xxxl,
+  },
+  quizButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: radius.lg,
+    width: '100%',
+    marginBottom: spacing.md,
+  },
+  quizButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textInverse,
+  },
+  quizDisabled: {
+    width: '100%',
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
+  quizDisabledText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  restartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    width: '100%',
+  },
+  restartButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.primary,
   },
 });
