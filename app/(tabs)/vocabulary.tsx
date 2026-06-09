@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseResponse, PhraseUpdateRequest, LANGUAGE_TO_API } from '../../src/api/phrases';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
@@ -39,6 +40,7 @@ export default function VocabularyScreen() {
   const [saving, setSaving] = useState(false);
   const [lookingUpDefinition, setLookingUpDefinition] = useState(false);
 
+  const { t } = useTranslation();
   const { nativeLanguage, studiedLanguage } = useLanguage();
 
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
@@ -166,12 +168,12 @@ export default function VocabularyScreen() {
 
   const handleDeletePress = (phrase: PhraseResponse) => {
     Alert.alert(
-      'Delete word',
-      `Remove "${phrase.originalWord}" from your vocabulary?`,
+      t('deleteWord'),
+      t('deleteWordConfirm', { word: phrase.originalWord }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -213,7 +215,7 @@ export default function VocabularyScreen() {
               { color: item.repetitions > 0 ? colors.success : colors.warning },
             ]}
           >
-            {item.repetitions > 0 ? 'Reviewed' : 'New'}
+            {item.repetitions > 0 ? t('reviewed') : t('wordNew')}
           </Text>
         </View>
         <TouchableOpacity
@@ -240,10 +242,10 @@ export default function VocabularyScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Vocabulary</Text>
+          <Text style={styles.headerTitle}>{t('vocabularyTitle')}</Text>
           {!loading && (
             <Text style={styles.headerSub}>
-              {totalElements} {totalElements === 1 ? 'word' : 'words'}
+              {t('wordCount', { count: totalElements })}
             </Text>
           )}
         </View>
@@ -279,10 +281,8 @@ export default function VocabularyScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons name="library-outline" size={48} color={colors.textTertiary} />
-              <Text style={styles.emptyTitle}>No words yet</Text>
-              <Text style={styles.emptyText}>
-                Tap the + button to add your first word.
-              </Text>
+              <Text style={styles.emptyTitle}>{t('noVocabTitle')}</Text>
+              <Text style={styles.emptyText}>{t('noVocabHint')}</Text>
             </View>
           }
           ListFooterComponent={
@@ -310,14 +310,14 @@ export default function VocabularyScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {modalMode === 'create' ? 'Add word' : 'Edit word'}
+                {modalMode === 'create' ? t('addWordTitle') : t('editWordTitle')}
               </Text>
               <TouchableOpacity onPress={closeModal}>
                 <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Term *</Text>
+            <Text style={styles.fieldLabel}>{t('termRequired')}</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. Ephemeral"
@@ -332,11 +332,11 @@ export default function VocabularyScreen() {
             {lookingUpDefinition && (
               <View style={styles.lookupRow}>
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.lookupText}>Looking up definition…</Text>
+                <Text style={styles.lookupText}>{t('lookingUpDefinition')}</Text>
               </View>
             )}
 
-            <Text style={styles.fieldLabel}>Translation *</Text>
+            <Text style={styles.fieldLabel}>{t('translationRequired')}</Text>
             <TextInput
               style={[styles.input, styles.inputMultiline]}
               placeholder="e.g. Lasting for a very short time"
@@ -359,7 +359,7 @@ export default function VocabularyScreen() {
                 <ActivityIndicator color={colors.textInverse} size="small" />
               ) : (
                 <Text style={styles.saveButtonText}>
-                  {modalMode === 'create' ? 'Save' : 'Save changes'}
+                  {modalMode === 'create' ? t('save') : t('saveChanges')}
                 </Text>
               )}
             </TouchableOpacity>

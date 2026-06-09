@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
 
@@ -12,6 +13,7 @@ export default function LearnScreen() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
+  const { t } = useTranslation();
 
   const loadPhrases = useCallback(async () => {
     setLoading(true);
@@ -63,8 +65,8 @@ export default function LearnScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>No phrases yet</Text>
-          <Text style={styles.emptySubtitle}>Add phrases from the Translate tab to start learning.</Text>
+          <Text style={styles.emptyTitle}>{t('noPhrasesTitle')}</Text>
+          <Text style={styles.emptySubtitle}>{t('noPhrasesHint')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -78,27 +80,25 @@ export default function LearnScreen() {
           <View style={styles.completionIcon}>
             <Ionicons name="checkmark-circle" size={64} color={colors.success} />
           </View>
-          <Text style={styles.completionTitle}>Session complete!</Text>
+          <Text style={styles.completionTitle}>{t('sessionComplete')}</Text>
           <Text style={styles.completionSubtitle}>
-            You reviewed {phrases.length} {phrases.length === 1 ? 'phrase' : 'phrases'}.
+            {t('reviewedCount', { count: phrases.length })}
           </Text>
 
           {canQuiz ? (
             <TouchableOpacity style={styles.quizButton} onPress={handleStartQuiz}>
               <Ionicons name="help-circle-outline" size={20} color={colors.textInverse} />
-              <Text style={styles.quizButtonText}>Quiz these phrases</Text>
+              <Text style={styles.quizButtonText}>{t('quizThesePhrases')}</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.quizDisabled}>
-              <Text style={styles.quizDisabledText}>
-                Add at least 4 phrases to unlock the quiz.
-              </Text>
+              <Text style={styles.quizDisabledText}>{t('addMoreForQuiz')}</Text>
             </View>
           )}
 
           <TouchableOpacity style={styles.restartButton} onPress={loadPhrases}>
             <Ionicons name="refresh" size={18} color={colors.primary} />
-            <Text style={styles.restartButtonText}>Study again</Text>
+            <Text style={styles.restartButtonText}>{t('studyAgain')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -112,7 +112,7 @@ export default function LearnScreen() {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Learn</Text>
+          <Text style={styles.headerTitle}>{t('learnTitle')}</Text>
           <Text style={styles.counter}>
             {currentIndex + 1} of {phrases.length}
           </Text>
@@ -140,15 +140,15 @@ export default function LearnScreen() {
           {!isFlipped ? (
             <View style={styles.cardFront}>
               <View style={[styles.pill, { backgroundColor: colors.infoLight }]}>
-                <Text style={[styles.pillText, { color: colors.info }]}>Phrase</Text>
+                <Text style={[styles.pillText, { color: colors.info }]}>{t('phrase')}</Text>
               </View>
               <Text style={styles.wordText}>{phrase.originalWord}</Text>
-              <Text style={styles.flipHint}>Tap to reveal translation</Text>
+              <Text style={styles.flipHint}>{t('tapToReveal')}</Text>
             </View>
           ) : (
             <View style={styles.cardBack}>
               <View style={[styles.pill, { backgroundColor: colors.successLight }]}>
-                <Text style={[styles.pillText, { color: colors.success }]}>Translation</Text>
+                <Text style={[styles.pillText, { color: colors.success }]}>{t('translation')}</Text>
               </View>
               <Text style={styles.definition}>{phrase.translatedWord}</Text>
             </View>
@@ -158,13 +158,13 @@ export default function LearnScreen() {
         {/* Navigation buttons */}
         <View style={styles.difficultyRow}>
           <TouchableOpacity style={styles.diffButton} onPress={handleNext}>
-            <Text style={[styles.diffText, { color: colors.danger }]}>Hard</Text>
+            <Text style={[styles.diffText, { color: colors.danger }]}>{t('hard')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.diffButton} onPress={handleNext}>
-            <Text style={[styles.diffText, { color: colors.warning }]}>Good</Text>
+            <Text style={[styles.diffText, { color: colors.warning }]}>{t('good')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.diffButton} onPress={handleNext}>
-            <Text style={[styles.diffText, { color: colors.success }]}>Easy</Text>
+            <Text style={[styles.diffText, { color: colors.success }]}>{t('easy')}</Text>
           </TouchableOpacity>
         </View>
       </View>

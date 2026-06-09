@@ -22,7 +22,10 @@
       "Bash(cat)",
       "Read(//tmp/**)",
       "Bash(python3 -c ' *)",
-      "Bash(curl -v http://localhost:8080/v3/api-docs)"
+      "Bash(curl -v http://localhost:8080/v3/api-docs)",
+      "Bash(curl -s http://localhost:8080/swagger/doc.json)",
+      "Bash(grep -n \"'{1,}[A-Za-z]\" /Users/Revan/IdeaProjects/memorize/app/app/\\\\\\(tabs\\\\\\)/translator.tsx)",
+      "Bash(grep -n \"'{1,}[A-Za-z]\" /Users/Revan/IdeaProjects/memorize/app/app/\\\\\\(tabs\\\\\\)/vocabulary.tsx)"
     ]
   }
 }

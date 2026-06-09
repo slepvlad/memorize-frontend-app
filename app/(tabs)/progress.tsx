@@ -1,13 +1,11 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius } from '../../src/theme';
 
-const stats = [
-  { value: '248', label: 'Words learned', color: colors.success },
-  { value: '12', label: 'Day streak', color: colors.warning },
-  { value: '86%', label: 'Quiz accuracy', color: colors.info },
-  { value: '1,240', label: 'XP earned', color: colors.purple },
-];
+const STAT_KEYS = ['wordsLearned', 'dayStreak', 'quizAccuracy', 'xpEarned'] as const;
+const STAT_VALUES = ['248', '12', '86%', '1,240'];
+const STAT_COLORS = [colors.success, colors.warning, colors.info, colors.purple];
 
 const weekData = [
   { day: 'Mon', value: 65 },
@@ -19,13 +17,12 @@ const weekData = [
   { day: 'Sun', value: 50 },
 ];
 
-const mastery = [
-  { label: 'Mastered', percent: 45, color: colors.primary },
-  { label: 'Learning', percent: 35, color: colors.warning },
-  { label: 'New', percent: 20, color: colors.borderHover },
-];
+const MASTERY_KEYS = ['mastered', 'learning', 'wordNew'] as const;
+const MASTERY_PERCENTS = [45, 35, 20];
+const MASTERY_COLORS = [colors.primary, colors.warning, colors.borderHover];
 
 export default function ProgressScreen() {
+  const { t } = useTranslation();
   const todayIndex = 3; // Thursday
 
   return (
@@ -34,22 +31,22 @@ export default function ProgressScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Your progress</Text>
+        <Text style={styles.title}>{t('yourProgress')}</Text>
 
         {/* Stat Grid */}
         <View style={styles.statGrid}>
-          {stats.map((stat, i) => (
+          {STAT_KEYS.map((key, i) => (
             <View key={i} style={styles.statCard}>
-              <Text style={[styles.statValue, { color: stat.color }]}>
-                {stat.value}
+              <Text style={[styles.statValue, { color: STAT_COLORS[i] }]}>
+                {STAT_VALUES[i]}
               </Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
+              <Text style={styles.statLabel}>{t(key)}</Text>
             </View>
           ))}
         </View>
 
         {/* Weekly Chart */}
-        <Text style={styles.sectionTitle}>This week</Text>
+        <Text style={styles.sectionTitle}>{t('thisWeek')}</Text>
         <View style={styles.chartCard}>
           <View style={styles.chartBars}>
             {weekData.map((d, i) => (
@@ -83,22 +80,22 @@ export default function ProgressScreen() {
         </View>
 
         {/* Mastery */}
-        <Text style={styles.sectionTitle}>Mastery breakdown</Text>
-        {mastery.map((item, i) => (
+        <Text style={styles.sectionTitle}>{t('masteryBreakdown')}</Text>
+        {MASTERY_KEYS.map((key, i) => (
           <View key={i} style={styles.masteryRow}>
-            <Text style={styles.masteryLabel}>{item.label}</Text>
+            <Text style={styles.masteryLabel}>{t(key)}</Text>
             <View style={styles.masteryTrack}>
               <View
                 style={[
                   styles.masteryFill,
                   {
-                    width: `${item.percent}%`,
-                    backgroundColor: item.color,
+                    width: `${MASTERY_PERCENTS[i]}%`,
+                    backgroundColor: MASTERY_COLORS[i],
                   },
                 ]}
               />
             </View>
-            <Text style={styles.masteryPercent}>{item.percent}%</Text>
+            <Text style={styles.masteryPercent}>{MASTERY_PERCENTS[i]}%</Text>
           </View>
         ))}
       </ScrollView>

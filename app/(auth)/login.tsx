@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { useAuth } from '../../src/context/AuthContext';
@@ -20,6 +21,7 @@ import { colors, spacing } from '../../src/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { login, isLoading, error, clearError } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -33,13 +35,13 @@ export default function LoginScreen() {
     const errors: { email?: string; password?: string } = {};
 
     if (!email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = t('emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Please enter a valid email';
+      errors.email = t('emailInvalid');
     }
 
     if (!password) {
-      errors.password = 'Password is required';
+      errors.password = t('passwordRequired');
     }
 
     setFieldErrors(errors);
@@ -74,11 +76,11 @@ export default function LoginScreen() {
             style={styles.backButton}
           >
             <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('back')}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to continue learning</Text>
+          <Text style={styles.title}>{t('loginTitle')}</Text>
+          <Text style={styles.subtitle}>{t('loginSubtitle')}</Text>
 
           {error && (
             <View style={styles.errorBanner}>
@@ -89,8 +91,8 @@ export default function LoginScreen() {
 
           <View style={styles.form}>
             <Input
-              label="Email"
-              placeholder="your@email.com"
+              label={t('emailLabel')}
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
@@ -101,8 +103,8 @@ export default function LoginScreen() {
               error={fieldErrors.email}
             />
             <Input
-              label="Password"
-              placeholder="Enter password"
+              label={t('passwordLabel')}
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
@@ -114,11 +116,11 @@ export default function LoginScreen() {
             />
 
             <TouchableOpacity style={styles.forgotButton}>
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Text style={styles.forgotText}>{t('forgotPassword')}</Text>
             </TouchableOpacity>
 
             <Button
-              title="Sign in"
+              title={t('signIn')}
               onPress={handleLogin}
               loading={isLoading}
               style={{ marginTop: spacing.md }}
@@ -131,7 +133,7 @@ export default function LoginScreen() {
             </View>
 
             <Button
-              title="Continue with Google"
+              title={t('continueWithGoogle')}
               variant="secondary"
               onPress={() => Alert.alert('Google Sign-In', 'Coming soon!')}
               icon={
@@ -141,9 +143,9 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>{t('noAccount')}</Text>
             <TouchableOpacity onPress={() => router.replace('/(auth)/register')}>
-              <Text style={styles.footerLink}>Sign up</Text>
+              <Text style={styles.footerLink}>{t('signUp')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

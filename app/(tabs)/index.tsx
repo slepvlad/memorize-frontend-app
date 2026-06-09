@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
 import { wordsApi, WordResponse } from '../../src/api/words';
@@ -21,6 +22,7 @@ import { colors, spacing, radius } from '../../src/theme';
 
 export default function HomeScreen() {
   const { logout } = useAuth();
+  const { t } = useTranslation();
   const { nativeLanguage, studiedLanguage } = useLanguage();
   const router = useRouter();
 
@@ -76,7 +78,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good morning</Text>
+            <Text style={styles.greeting}>{t('goodMorning')}</Text>
             <Text style={styles.name}>Learner</Text>
           </View>
           <View style={styles.headerRight}>
@@ -101,7 +103,7 @@ export default function HomeScreen() {
         <View style={styles.streakCard}>
           <View style={styles.streakTop}>
             <View>
-              <Text style={styles.streakLabel}>Words added</Text>
+              <Text style={styles.streakLabel}>{t('wordsAdded')}</Text>
               <Text style={styles.streakCount}>{loadingWords ? '—' : totalWords}</Text>
             </View>
             <Ionicons name="library-outline" size={32} color="rgba(255,255,255,0.4)" />
@@ -116,8 +118,8 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="layers-outline" size={28} color={colors.primary} />
-            <Text style={styles.actionTitle}>Learn words</Text>
-            <Text style={styles.actionSub}>Flashcards</Text>
+            <Text style={styles.actionTitle}>{t('learnWords')}</Text>
+            <Text style={styles.actionSub}>{t('flashcards')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -126,28 +128,28 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="help-circle-outline" size={28} color={colors.coral} />
-            <Text style={styles.actionTitle}>Quiz me</Text>
-            <Text style={styles.actionSub}>Test yourself</Text>
+            <Text style={styles.actionTitle}>{t('quizMe')}</Text>
+            <Text style={styles.actionSub}>{t('testYourself')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Recent Words */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent words</Text>
+          <Text style={styles.sectionTitle}>{t('recentWords')}</Text>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setModalVisible(true)}
             activeOpacity={0.8}
           >
             <Ionicons name="add" size={18} color={colors.textInverse} />
-            <Text style={styles.addButtonText}>Add word</Text>
+            <Text style={styles.addButtonText}>{t('addWord')}</Text>
           </TouchableOpacity>
         </View>
 
         {loadingWords ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
         ) : recentWords.length === 0 ? (
-          <Text style={styles.emptyText}>No words yet. Tap "Add word" to get started.</Text>
+          <Text style={styles.emptyText}>{t('noWords')}</Text>
         ) : (
           recentWords.map((item) => (
             <View key={item.id} style={styles.wordRow}>
@@ -172,7 +174,7 @@ export default function HomeScreen() {
                     { color: item.repetitions > 0 ? colors.success : colors.warning },
                   ]}
                 >
-                  {item.repetitions > 0 ? 'Reviewed' : 'New'}
+                  {item.repetitions > 0 ? t('reviewed') : t('wordNew')}
                 </Text>
               </View>
             </View>
@@ -193,13 +195,13 @@ export default function HomeScreen() {
         >
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add word</Text>
+              <Text style={styles.modalTitle}>{t('addWordTitle')}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Term *</Text>
+            <Text style={styles.fieldLabel}>{t('termLabel')}</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. Ephemeral"
@@ -210,7 +212,7 @@ export default function HomeScreen() {
               autoCorrect={false}
             />
 
-            <Text style={styles.fieldLabel}>Definition</Text>
+            <Text style={styles.fieldLabel}>{t('definitionLabel')}</Text>
             <TextInput
               style={[styles.input, styles.inputMultiline]}
               placeholder="e.g. Lasting for a very short time"
@@ -229,7 +231,7 @@ export default function HomeScreen() {
               {saving ? (
                 <ActivityIndicator color={colors.textInverse} size="small" />
               ) : (
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={styles.saveButtonText}>{t('save')}</Text>
               )}
             </TouchableOpacity>
           </View>

@@ -3,11 +3,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../src/components/ui/Button';
 import { colors, spacing } from '../../src/theme';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <LinearGradient
@@ -24,17 +26,17 @@ export default function WelcomeScreen() {
           </View>
           <Text style={styles.title}>Memorize</Text>
           <Text style={styles.subtitle}>
-            Master new words with smart{'\n'}spaced repetition
+            {t('welcomeSubtitle')}
           </Text>
         </View>
 
         <View style={styles.actions}>
           <Button
-            title="Get started"
+            title={t('getStarted')}
             onPress={() => router.push('/(auth)/register')}
           />
           <Button
-            title="I already have an account"
+            title={t('haveAccount')}
             variant="secondary"
             onPress={() => router.push('/(auth)/login')}
           />

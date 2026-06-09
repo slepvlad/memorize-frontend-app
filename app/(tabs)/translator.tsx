@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseLookupResponse, LANGUAGE_TO_API } from '../../src/api/phrases';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
 import { colors, spacing, radius } from '../../src/theme';
@@ -31,6 +32,7 @@ export default function TranslatorScreen() {
   const [saved, setSaved] = useState(false);
 
   const router = useRouter();
+  const { t } = useTranslation();
   const { studiedLanguage, nativeLanguage, isConfigured } = useLanguage();
 
   const tabBarHeight = useBottomTabBarHeight();
@@ -81,7 +83,7 @@ export default function TranslatorScreen() {
   };
 
   const handlePlayAudio = () => {
-    Alert.alert('Coming soon', 'Audio playback will be available in a future update.');
+    Alert.alert(t('comingSoon'), t('audioComingSoon'));
   };
 
   const handleSave = async () => {
@@ -110,10 +112,8 @@ export default function TranslatorScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyState}>
           <Ionicons name="globe-outline" size={56} color={colors.textTertiary} />
-          <Text style={styles.emptyTitle}>Languages not configured</Text>
-          <Text style={styles.emptyText}>
-            Set up your native and studied languages to use the translator.
-          </Text>
+          <Text style={styles.emptyTitle}>{t('languagesNotConfigured')}</Text>
+          <Text style={styles.emptyText}>{t('languagesNotConfiguredHint')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -129,7 +129,7 @@ export default function TranslatorScreen() {
           accessibilityLabel="Go to Home"
         >
           <Ionicons name="chevron-back" size={20} color={colors.primary} />
-          <Text style={styles.homeBtnText}>Home</Text>
+          <Text style={styles.homeBtnText}>{t('home')}</Text>
         </TouchableOpacity>
         <View style={styles.headerRight}>
           {result && query.trim().length > 0 && (
@@ -173,7 +173,7 @@ export default function TranslatorScreen() {
         <View style={styles.inputPanel}>
           <TextInput
             style={styles.inputText}
-            placeholder="Enter text…"
+            placeholder={t('enterText')}
             placeholderTextColor={colors.textTertiary}
             value={query}
             onChangeText={setQuery}
@@ -238,7 +238,7 @@ export default function TranslatorScreen() {
         {/* Examples */}
         {result && !loading && result.examples.length > 0 && (
           <View style={styles.examplesSection}>
-            <Text style={styles.examplesTitle}>Examples</Text>
+            <Text style={styles.examplesTitle}>{t('examples')}</Text>
             {result.examples.map((ex, i) => (
               <View key={i} style={styles.exampleItem}>
                 <Text style={styles.exampleOriginal}>{ex.original}</Text>
@@ -252,7 +252,7 @@ export default function TranslatorScreen() {
         {!loading && !result && (
           <View style={styles.hintBox}>
             <Ionicons name="language-outline" size={32} color={colors.textTertiary} />
-            <Text style={styles.hintText}>Enter a word or phrase to see its translation</Text>
+            <Text style={styles.hintText}>{t('enterToTranslate')}</Text>
           </View>
         )}
       </ScrollView>

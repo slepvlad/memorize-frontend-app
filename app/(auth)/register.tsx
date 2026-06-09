@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { useAuth } from '../../src/context/AuthContext';
@@ -28,15 +29,16 @@ function getPasswordStrength(password: string): {
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score: 1, label: 'Weak', color: colors.danger };
-  if (score <= 2) return { score: 2, label: 'Fair', color: colors.warning };
-  if (score <= 3) return { score: 3, label: 'Good', color: colors.warning };
-  if (score <= 4) return { score: 4, label: 'Strong', color: colors.primary };
-  return { score: 5, label: 'Very strong', color: colors.primary };
+  if (score <= 1) return { score: 1, labelKey: 'strengthWeak', color: colors.danger };
+  if (score <= 2) return { score: 2, labelKey: 'strengthFair', color: colors.warning };
+  if (score <= 3) return { score: 3, labelKey: 'strengthGood', color: colors.warning };
+  if (score <= 4) return { score: 4, labelKey: 'strengthStrong', color: colors.primary };
+  return { score: 5, labelKey: 'strengthVeryStrong', color: colors.primary };
 }
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { register, isLoading, error, clearError } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -48,27 +50,28 @@ export default function RegisterScreen() {
     confirmPassword?: string;
   }>({});
 
-  const strength = password ? getPasswordStrength(password) : null;
+  const strengthData = password ? getPasswordStrength(password) : null;
+  const strength = strengthData ? { ...strengthData, label: t(strengthData.labelKey as any) } : null;
 
   const validate = (): boolean => {
     const errors: typeof fieldErrors = {};
 
     if (!email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = t('emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Please enter a valid email';
+      errors.email = t('emailInvalid');
     }
 
     if (!password) {
-      errors.password = 'Password is required';
+      errors.password = t('passwordRequired');
     } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = t('passwordMin6');
     }
 
     if (!confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
+      errors.confirmPassword = t('confirmRequired');
     } else if (password !== confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+      errors.confirmPassword = t('passwordMismatch');
     }
 
     setFieldErrors(errors);
@@ -102,11 +105,11 @@ export default function RegisterScreen() {
             style={styles.backButton}
           >
             <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('back')}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Start your vocabulary journey</Text>
+          <Text style={styles.title}>{t('registerTitle')}</Text>
+          <Text style={styles.subtitle}>{t('registerSubtitle')}</Text>
 
           {error && (
             <View style={styles.errorBanner}>
@@ -117,8 +120,8 @@ export default function RegisterScreen() {
 
           <View style={styles.form}>
             <Input
-              label="Email"
-              placeholder="your@email.com"
+              label={t('emailLabel')}
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
@@ -130,8 +133,8 @@ export default function RegisterScreen() {
             />
 
             <Input
-              label="Password"
-              placeholder="At least 6 characters"
+              label={t('passwordLabel')}
+              placeholder={t('passwordMinLength')}
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
@@ -168,8 +171,8 @@ export default function RegisterScreen() {
             )}
 
             <Input
-              label="Confirm password"
-              placeholder="Re-enter password"
+              label={t('confirmPasswordLabel')}
+              placeholder={t('reEnterPassword')}
               value={confirmPassword}
               onChangeText={(text) => {
                 setConfirmPassword(text);
@@ -182,7 +185,7 @@ export default function RegisterScreen() {
             />
 
             <Button
-              title="Create account"
+              title={t('createAccount')}
               onPress={handleRegister}
               loading={isLoading}
               style={{ marginTop: spacing.md }}
@@ -190,9 +193,9 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>{t('alreadyHaveAccount')}</Text>
             <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-              <Text style={styles.footerLink}>Sign in</Text>
+              <Text style={styles.footerLink}>{t('signIn')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

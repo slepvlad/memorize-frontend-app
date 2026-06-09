@@ -11,11 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useLanguage, SUPPORTED_LANGUAGES, Language } from '../../src/context/LanguageContext';
 import { colors, spacing, radius, typography } from '../../src/theme';
 
 export default function LanguageSetupScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { nativeLanguage: savedNative, studiedLanguage: savedStudied, isConfigured, setLanguages } = useLanguage();
 
   const [nativeLanguage, setNativeLanguage] = useState<Language | null>(savedNative);
@@ -44,7 +46,7 @@ export default function LanguageSetupScreen() {
         {isConfigured && (
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('back')}</Text>
           </TouchableOpacity>
         )}
 
@@ -52,28 +54,28 @@ export default function LanguageSetupScreen() {
           <Ionicons name="language-outline" size={36} color={colors.textInverse} />
         </View>
 
-        <Text style={styles.title}>Choose your languages</Text>
-        <Text style={styles.subtitle}>
-          This helps us tailor your learning experience
-        </Text>
+        <Text style={styles.title}>{t('chooseLanguages')}</Text>
+        <Text style={styles.subtitle}>{t('languageSetupSubtitle')}</Text>
 
         <View style={styles.fields}>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>My native language</Text>
+            <Text style={styles.fieldLabel}>{t('myNativeLanguage')}</Text>
             <LanguageDropdown
               value={nativeLanguage}
               disabledOption={studiedLanguage}
-              placeholder="Select language"
+              placeholder={t('selectLanguage')}
+              alreadySelectedLabel={t('alreadySelected')}
               onChange={setNativeLanguage}
             />
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Language I want to learn</Text>
+            <Text style={styles.fieldLabel}>{t('languageToLearn')}</Text>
             <LanguageDropdown
               value={studiedLanguage}
               disabledOption={nativeLanguage}
-              placeholder="Select language"
+              placeholder={t('selectLanguage')}
+              alreadySelectedLabel={t('alreadySelected')}
               onChange={setStudiedLanguage}
             />
           </View>
@@ -88,7 +90,7 @@ export default function LanguageSetupScreen() {
           activeOpacity={0.8}
         >
           <Text style={styles.saveButtonText}>
-            {saving ? 'Saving…' : isConfigured ? 'Save changes' : 'Get started'}
+            {saving ? t('saving') : isConfigured ? t('saveChanges') : t('getStarted')}
           </Text>
           {!saving && (
             <Ionicons name="arrow-forward" size={18} color={colors.textInverse} />
@@ -103,11 +105,13 @@ function LanguageDropdown({
   value,
   disabledOption,
   placeholder,
+  alreadySelectedLabel,
   onChange,
 }: {
   value: Language | null;
   disabledOption: Language | null;
   placeholder: string;
+  alreadySelectedLabel: string;
   onChange: (lang: Language) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -164,7 +168,7 @@ function LanguageDropdown({
                     {lang.name}
                   </Text>
                   {isDisabled && (
-                    <Text style={styles.itemHint}>Already selected</Text>
+                    <Text style={styles.itemHint}>{alreadySelectedLabel}</Text>
                   )}
                   {isSelected && !isDisabled && (
                     <Ionicons name="checkmark" size={20} color={colors.primary} />

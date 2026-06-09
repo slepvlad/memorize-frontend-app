@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
 
@@ -46,6 +47,7 @@ function buildQuestions(duePhrases: PhraseResponse[], allPhrases: PhraseResponse
 
 export default function QuizScreen() {
   const { phraseIds } = useLocalSearchParams<{ phraseIds?: string }>();
+  const { t } = useTranslation();
   const [isLearnSession, setIsLearnSession] = useState(!!phraseIds);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,12 +168,10 @@ export default function QuizScreen() {
             />
           </View>
           <Text style={styles.emptyTitle}>
-            {isEmpty ? 'All caught up!' : 'Not enough phrases'}
+            {isEmpty ? t('allCaughtUp') : t('notEnoughPhrases')}
           </Text>
           <Text style={styles.emptySubtitle}>
-            {isEmpty
-              ? 'Nothing is due for review right now. Come back later.'
-              : 'Add at least 4 phrases to start a quiz.'}
+            {isEmpty ? t('nothingDue') : t('addFourPhrases')}
           </Text>
         </View>
       </SafeAreaView>
@@ -188,12 +188,12 @@ export default function QuizScreen() {
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Results</Text>
+            <Text style={styles.headerTitle}>{t('resultsTitle')}</Text>
           </View>
 
           <View style={styles.resultsSummary}>
             <Text style={styles.resultsScore}>{score}/{total}</Text>
-            <Text style={styles.resultsPct}>{pct}% correct</Text>
+            <Text style={styles.resultsPct}>{t('scorePercent', { pct })}</Text>
             <View
               style={[
                 styles.resultsBadge,
@@ -206,12 +206,12 @@ export default function QuizScreen() {
                   { color: pct >= 70 ? colors.success : colors.warning },
                 ]}
               >
-                {pct >= 90 ? 'Excellent!' : pct >= 70 ? 'Good job!' : 'Keep practicing'}
+                {pct >= 90 ? t('excellent') : pct >= 70 ? t('goodJob') : t('keepPracticing')}
               </Text>
             </View>
           </View>
 
-          <Text style={styles.sectionLabel}>Review breakdown</Text>
+          <Text style={styles.sectionLabel}>{t('reviewBreakdown')}</Text>
           {results.map((r, i) => (
             <View key={i} style={styles.resultRow}>
               <Ionicons
@@ -224,7 +224,7 @@ export default function QuizScreen() {
           ))}
 
           <TouchableOpacity style={styles.nextButton} onPress={handleNewSession}>
-            <Text style={styles.nextButtonText}>New session</Text>
+            <Text style={styles.nextButtonText}>{t('newSession')}</Text>
             <Ionicons name="refresh" size={18} color={colors.textInverse} />
           </TouchableOpacity>
         </ScrollView>
@@ -240,10 +240,10 @@ export default function QuizScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>Quiz</Text>
+            <Text style={styles.headerTitle}>{t('quizTitle')}</Text>
             {isLearnSession && (
               <View style={styles.sessionBadge}>
-                <Text style={styles.sessionBadgeText}>from Learn</Text>
+                <Text style={styles.sessionBadgeText}>{t('fromLearn')}</Text>
               </View>
             )}
           </View>
@@ -255,7 +255,7 @@ export default function QuizScreen() {
         </View>
 
         <Text style={styles.counter}>
-          Question {currentQ + 1} of {questions.length}
+          {t('questionCounter', { current: currentQ + 1, total: questions.length })}
         </Text>
 
         {/* Progress */}
@@ -282,7 +282,7 @@ export default function QuizScreen() {
 
         {/* Question */}
         <View style={styles.questionArea}>
-          <Text style={styles.questionLabel}>What does this mean?</Text>
+          <Text style={styles.questionLabel}>{t('whatDoesThisMean')}</Text>
           <Text style={styles.questionWord}>{question.question}</Text>
         </View>
 
@@ -334,7 +334,7 @@ export default function QuizScreen() {
         {answered && (
           <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
             <Text style={styles.nextButtonText}>
-              {currentQ < questions.length - 1 ? 'Next question' : 'See results'}
+              {currentQ < questions.length - 1 ? t('nextQuestion') : t('seeResults')}
             </Text>
             <Ionicons name="arrow-forward" size={18} color={colors.textInverse} />
           </TouchableOpacity>
