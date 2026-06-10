@@ -3,7 +3,6 @@ import { Alert } from 'react-native';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import VocabularyScreen from '../../../app/(tabs)/vocabulary';
 import { phrasesApi } from '../../../src/api/phrases';
-import { dictionaryApi, translationApi } from '../../../src/api/dictionary';
 import { useLanguage } from '../../../src/context/LanguageContext';
 
 jest.mock('../../../src/api/phrases', () => ({
@@ -12,13 +11,9 @@ jest.mock('../../../src/api/phrases', () => ({
     save: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    lookup: jest.fn(),
   },
   LANGUAGE_TO_API: { en: 'ENGLISH', ru: 'RUSSIAN' },
-}));
-
-jest.mock('../../../src/api/dictionary', () => ({
-  dictionaryApi: { lookup: jest.fn() },
-  translationApi: { translate: jest.fn() },
 }));
 
 jest.mock('../../../src/context/LanguageContext', () => ({
@@ -29,8 +24,7 @@ const mockGetAll = phrasesApi.getAll as jest.Mock;
 const mockSave = phrasesApi.save as jest.Mock;
 const mockUpdate = phrasesApi.update as jest.Mock;
 const mockDelete = phrasesApi.delete as jest.Mock;
-const mockLookup = dictionaryApi.lookup as jest.Mock;
-const mockTranslate = translationApi.translate as jest.Mock;
+const mockLookup = phrasesApi.lookup as jest.Mock;
 const mockUseLanguage = useLanguage as jest.Mock;
 
 const makePhrase = (
@@ -76,21 +70,13 @@ beforeEach(() => {
   mockUpdate.mockResolvedValue(makePhrase('1', 'Ephemeral Updated', 'Short-lived'));
   mockDelete.mockResolvedValue(undefined);
   mockLookup.mockResolvedValue({
-    word: 'serendipity',
-    meanings: [
-      {
-        part_of_speech: 'noun',
-        definitions: [{ definition: 'Happy chance', example: '', synonyms: [], antonyms: [] }],
-        synonyms: [],
-        antonyms: [],
-      },
-    ],
-  });
-  mockTranslate.mockResolvedValue({
-    source: 'en',
-    target: 'ru',
-    original_text: 'Happy chance',
-    translated_text: 'Счастливая случайность',
+    originalWord: 'serendipity',
+    originalLanguage: 'ENGLISH',
+    translatedWord: 'Счастливая случайность',
+    translatedLanguage: 'RUSSIAN',
+    originalAudioId: null,
+    translatedAudioId: null,
+    examples: [],
   });
   mockUseLanguage.mockReturnValue({
     nativeLanguage: 'ru',
@@ -265,7 +251,7 @@ describe('VocabularyScreen — create word', () => {
   it('shows Term * and Definition field labels', async () => {
     await openModal();
     expect(screen.getByText('Term *')).toBeTruthy();
-    expect(screen.getByText('Definition')).toBeTruthy();
+    expect(screen.getAllByText('Definition').length).toBeGreaterThan(0);
   });
 
   it('does not call save when term is empty', async () => {
@@ -463,7 +449,7 @@ describe('VocabularyScreen — delete word', () => {
       'Delete word',
       'Remove "Ephemeral" from your vocabulary?',
       expect.any(Array)
-    );
+    ); // t('deleteWord') and t('deleteWordConfirm', { word: ... }) return the same English strings
   });
 
   it('calls phrasesApi.delete when Delete is confirmed', async () => {
@@ -551,13 +537,16 @@ describe('VocabularyScreen — definition lookup', () => {
     fireEvent.press(screen.getByLabelText('Add word'));
   };
 
-  it('calls dictionaryApi.lookup when term input loses focus', async () => {
+  // Component calls phrasesApi.lookup(term, sourceApiLang, targetApiLang)
+  it('calls phrasesApi.lookup when term input loses focus', async () => {
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
     await act(async () => {
       fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
     });
-    await waitFor(() => expect(mockLookup).toHaveBeenCalledWith('Serendipity'));
+    await waitFor(() =>
+      expect(mockLookup).toHaveBeenCalledWith('Serendipity', 'ENGLISH', 'RUSSIAN')
+    );
   });
 
   it('trims term before passing to lookup', async () => {
@@ -566,7 +555,9 @@ describe('VocabularyScreen — definition lookup', () => {
     await act(async () => {
       fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
     });
-    await waitFor(() => expect(mockLookup).toHaveBeenCalledWith('Serendipity'));
+    await waitFor(() =>
+      expect(mockLookup).toHaveBeenCalledWith('Serendipity', 'ENGLISH', 'RUSSIAN')
+    );
   });
 
   it('prefills definition with translated text after lookup', async () => {
@@ -582,18 +573,15 @@ describe('VocabularyScreen — definition lookup', () => {
     );
   });
 
-  it('calls translationApi.translate with first definition and correct languages', async () => {
+  it('passes correct source and target languages from context to lookup', async () => {
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
     await act(async () => {
       fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
     });
     await waitFor(() =>
-      expect(mockTranslate).toHaveBeenCalledWith({
-        text: 'Happy chance',
-        source: 'en',
-        target: 'ru',
-      })
+      // studiedLanguage='en' → sourceLanguage='ENGLISH', nativeLanguage='ru' → targetLanguage='RUSSIAN'
+      expect(mockLookup).toHaveBeenCalledWith('Serendipity', 'ENGLISH', 'RUSSIAN')
     );
   });
 
@@ -606,6 +594,15 @@ describe('VocabularyScreen — definition lookup', () => {
       setLanguages: jest.fn(),
       clearLanguages: jest.fn(),
     });
+    mockLookup.mockResolvedValueOnce({
+      originalWord: 'serendipity',
+      originalLanguage: 'ENGLISH',
+      translatedWord: 'Happy chance',
+      translatedLanguage: 'ENGLISH',
+      originalAudioId: null,
+      translatedAudioId: null,
+      examples: [],
+    });
     await openModal();
     fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
     await act(async () => {
@@ -616,7 +613,6 @@ describe('VocabularyScreen — definition lookup', () => {
         screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
       ).toBe('Happy chance')
     );
-    expect(mockTranslate).not.toHaveBeenCalled();
   });
 
   it('does not call lookup in edit mode', async () => {
@@ -666,14 +662,22 @@ describe('VocabularyScreen — definition lookup', () => {
     ).toBe('');
   });
 
-  it('silently handles translation failure', async () => {
-    mockTranslate.mockRejectedValueOnce(new Error('Translation failed'));
+  it('silently handles lookup returning no translatedWord', async () => {
+    mockLookup.mockResolvedValueOnce({
+      originalWord: 'unknown',
+      originalLanguage: 'ENGLISH',
+      translatedWord: '',
+      translatedLanguage: 'RUSSIAN',
+      originalAudioId: null,
+      translatedAudioId: null,
+      examples: [],
+    });
     await openModal();
-    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Serendipity');
+    fireEvent.changeText(screen.getByPlaceholderText('e.g. Ephemeral'), 'Unknown');
     await act(async () => {
       fireEvent(screen.getByPlaceholderText('e.g. Ephemeral'), 'blur');
     });
-    await waitFor(() => expect(mockTranslate).toHaveBeenCalled());
+    await waitFor(() => expect(mockLookup).toHaveBeenCalled());
     expect(
       screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
     ).toBe('');

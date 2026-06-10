@@ -336,7 +336,7 @@ export default function VocabularyScreen() {
               </View>
             )}
 
-            <Text style={styles.fieldLabel}>{t('translationRequired')}</Text>
+            <Text style={styles.fieldLabel}>{t('definitionLabel')}</Text>
             <TextInput
               style={[styles.input, styles.inputMultiline]}
               placeholder="e.g. Lasting for a very short time"
@@ -350,10 +350,10 @@ export default function VocabularyScreen() {
             <TouchableOpacity
               style={[
                 styles.saveButton,
-                (!term.trim() || !definition.trim() || saving) && styles.saveButtonDisabled,
+                (!term.trim() || saving) && styles.saveButtonDisabled,
               ]}
               onPress={handleSave}
-              disabled={!term.trim() || !definition.trim() || saving}
+              disabled={!term.trim() || saving}
             >
               {saving ? (
                 <ActivityIndicator color={colors.textInverse} size="small" />
