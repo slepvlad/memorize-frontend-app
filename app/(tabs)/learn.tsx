@@ -7,8 +7,14 @@ import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
 
+function getDuePhrases(phrases: PhraseResponse[]): PhraseResponse[] {
+  const now = new Date();
+  return phrases.filter((p) => new Date(p.next_review_date) <= now);
+}
+
 export default function LearnScreen() {
   const [phrases, setPhrases] = useState<PhraseResponse[]>([]);
+  const [allPhrasesCount, setAllPhrasesCount] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -19,7 +25,10 @@ export default function LearnScreen() {
     setLoading(true);
     try {
       const page = await phrasesApi.getAll(0, 100);
-      setPhrases(page.content);
+      const all = page.content;
+      const due = getDuePhrases(all);
+      setAllPhrasesCount(all.length);
+      setPhrases(due);
       setCurrentIndex(0);
       setIsFlipped(false);
       setFinished(false);
@@ -61,7 +70,7 @@ export default function LearnScreen() {
     );
   }
 
-  if (phrases.length === 0) {
+  if (allPhrasesCount === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
@@ -72,8 +81,22 @@ export default function LearnScreen() {
     );
   }
 
+  if (phrases.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <View style={styles.completionIcon}>
+            <Ionicons name="checkmark-done-circle-outline" size={64} color={colors.success} />
+          </View>
+          <Text style={styles.emptyTitle}>{t('allCaughtUp')}</Text>
+          <Text style={styles.emptySubtitle}>{t('nothingDue')}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (finished) {
-    const canQuiz = phrases.length >= 4;
+    const canQuiz = allPhrasesCount >= 4;
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
