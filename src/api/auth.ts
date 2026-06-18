@@ -1,4 +1,5 @@
-import apiClient from './client';
+import axios from 'axios';
+import apiClient, { API_BASE_URL } from './client';
 import { tokenStorage } from '../storage/tokenStorage';
 
 export interface AuthResponse {
@@ -41,8 +42,10 @@ export const authApi = {
       throw new Error('No refresh token available');
     }
 
-    const { data } = await apiClient.post<AuthResponse>(
-      '/api/auth/refresh',
+    // Use plain axios (not apiClient) so the request interceptor cannot
+    // overwrite Authorization with the access token before the request sends.
+    const { data } = await axios.post<AuthResponse>(
+      `${API_BASE_URL}/api/auth/refresh`,
       {},
       {
         headers: {
