@@ -107,6 +107,10 @@ const en = {
   keepPracticing: 'Keep practicing',
   reviewBreakdown: 'Review breakdown',
   newSession: 'New session',
+  typePhraseLabel: 'Type the original phrase:',
+  typeAnswerPlaceholder: 'Type your answer…',
+  checkAnswer: 'Check',
+  correctAnswerLabel: 'Correct answer:',
 
   // Translator
   home: 'Home',

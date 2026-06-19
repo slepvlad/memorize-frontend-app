@@ -107,6 +107,10 @@ const ru = {
   keepPracticing: 'Продолжайте практиковаться',
   reviewBreakdown: 'Разбор ответов',
   newSession: 'Новая сессия',
+  typePhraseLabel: 'Напишите исходную фразу:',
+  typeAnswerPlaceholder: 'Введите ответ…',
+  checkAnswer: 'Проверить',
+  correctAnswerLabel: 'Правильный ответ:',
 
   // Translator
   home: 'Главная',

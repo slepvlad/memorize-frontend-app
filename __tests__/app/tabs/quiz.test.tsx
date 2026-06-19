@@ -28,6 +28,17 @@ const makePhrase = (id: string, originalWord: string, translatedWord: string) =>
   next_review_date: '2026-04-09',
 });
 
+const makePhraseWithExample = (
+  id: string,
+  originalWord: string,
+  translatedWord: string,
+  exampleOriginal: string,
+  exampleTranslation: string,
+) => ({
+  ...makePhrase(id, originalWord, translatedWord),
+  examples: [{ original: exampleOriginal, translation: exampleTranslation }],
+});
+
 // At least 4 phrases needed to build quiz questions
 const mockPhrases = [
   makePhrase('p1', 'Hello world', 'Привет мир'),
@@ -315,6 +326,112 @@ describe('QuizScreen — learn session (phraseIds param)', () => {
     await waitFor(() => screen.getByText('Привет мир'));
     await act(async () => { fireEvent.press(screen.getByText('Привет мир')); });
     expect(mockReview).toHaveBeenCalledWith('p1', true);
+  });
+});
+
+describe('QuizScreen — type challenge', () => {
+  const mockPhrasesWithExamples = [
+    makePhraseWithExample('p1', 'Hello world', 'Привет мир', 'Hello world, welcome!', 'Привет мир, добро пожаловать!'),
+    makePhraseWithExample('p2', 'Good morning', 'Доброе утро', 'Good morning!', 'Доброе утро!'),
+    makePhraseWithExample('p3', 'Thank you', 'Спасибо', 'Thank you so much!', 'Большое спасибо!'),
+    makePhraseWithExample('p4', 'Goodbye', 'До свидания', 'Goodbye everyone!', 'До свидания всем!'),
+  ];
+
+  beforeEach(() => {
+    // Math.random() < 0.5 → forces type questions; Math.floor(0.1 * 1) = 0 → picks first example
+    jest.spyOn(global.Math, 'random').mockReturnValue(0.1);
+    mockGetAll.mockResolvedValue(makePage(mockPhrasesWithExamples));
+  });
+
+  it('shows typePhraseLabel for type question', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => expect(screen.getByText('Type the original phrase:')).toBeTruthy());
+  });
+
+  it('shows example translation as prompt in quotes', async () => {
+    render(<QuizScreen />);
+    await waitFor(() =>
+      expect(screen.getByText('"Привет мир, добро пожаловать!"')).toBeTruthy()
+    );
+  });
+
+  it('shows text input with placeholder', async () => {
+    render(<QuizScreen />);
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText('Type your answer…')).toBeTruthy()
+    );
+  });
+
+  it('shows Check button', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => expect(screen.getByText('Check')).toBeTruthy());
+  });
+
+  it('does not show multiple-choice option letters A B C D', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByText('Type the original phrase:'));
+    expect(screen.queryByText('A')).toBeNull();
+    expect(screen.queryByText('B')).toBeNull();
+  });
+
+  it('correct typed answer increments score and shows Next', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByPlaceholderText('Type your answer…'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type your answer…'), 'Hello world, welcome!');
+    await act(async () => { fireEvent.press(screen.getByText('Check')); });
+    expect(screen.getByText('1/1')).toBeTruthy();
+    expect(screen.getByText('Next question')).toBeTruthy();
+  });
+
+  it('wrong typed answer does not increment score and shows correct answer', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByPlaceholderText('Type your answer…'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type your answer…'), 'wrong answer');
+    await act(async () => { fireEvent.press(screen.getByText('Check')); });
+    expect(screen.getByText('0/1')).toBeTruthy();
+    expect(screen.getByText('Correct answer:')).toBeTruthy();
+    expect(screen.getByText('Hello world, welcome!')).toBeTruthy();
+  });
+
+  it('hides correct answer box when answer is correct', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByPlaceholderText('Type your answer…'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type your answer…'), 'Hello world, welcome!');
+    await act(async () => { fireEvent.press(screen.getByText('Check')); });
+    expect(screen.queryByText('Correct answer:')).toBeNull();
+  });
+
+  it('matching is case-insensitive and trims whitespace', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByPlaceholderText('Type your answer…'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type your answer…'), '  Hello World, Welcome!  ');
+    await act(async () => { fireEvent.press(screen.getByText('Check')); });
+    expect(screen.getByText('1/1')).toBeTruthy();
+  });
+
+  it('calls phrasesApi.review with correct=true for right typed answer', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByPlaceholderText('Type your answer…'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type your answer…'), 'Hello world, welcome!');
+    await act(async () => { fireEvent.press(screen.getByText('Check')); });
+    expect(mockReview).toHaveBeenCalledWith('p1', true);
+  });
+
+  it('calls phrasesApi.review with correct=false for wrong typed answer', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByPlaceholderText('Type your answer…'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type your answer…'), 'wrong');
+    await act(async () => { fireEvent.press(screen.getByText('Check')); });
+    expect(mockReview).toHaveBeenCalledWith('p1', false);
+  });
+
+  it('advances to next question after answering type question', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByPlaceholderText('Type your answer…'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type your answer…'), 'Hello world, welcome!');
+    await act(async () => { fireEvent.press(screen.getByText('Check')); });
+    fireEvent.press(screen.getByText('Next question'));
+    await waitFor(() => expect(screen.getByText('Question 2 of 4')).toBeTruthy());
   });
 });
 
