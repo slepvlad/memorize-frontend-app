@@ -1,203 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator,
-  TextInput, KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { colors, spacing, radius } from '../../src/theme';
-
-interface SelectQuestion {
-  type: 'select';
-  phraseId: string;
-  question: string;
-  options: string[];
-  correctIndex: number;
-}
-
-interface TypeQuestion {
-  type: 'type';
-  phraseId: string;
-  question: string;
-  exampleTranslation: string;
-  correctAnswer: string;
-}
-
-type QuizQuestion = SelectQuestion | TypeQuestion;
-
-interface QuizResult {
-  phraseId: string;
-  question: string;
-  correct: boolean;
-}
-
-function getDuePhrases(phrases: PhraseResponse[]): PhraseResponse[] {
-  const now = new Date();
-  return phrases.filter((p) => new Date(p.next_review_date) <= now);
-}
-
-function normalize(s: string): string {
-  return s.trim().toLowerCase();
-}
-
-function buildQuestions(duePhrases: PhraseResponse[], allPhrases: PhraseResponse[]): QuizQuestion[] {
-  return duePhrases.map((phrase) => {
-    const validExamples = phrase.examples.filter((e) => e.original && e.translation);
-    const useType = validExamples.length > 0 && Math.random() < 0.5;
-
-    if (useType) {
-      const example = validExamples[Math.floor(Math.random() * validExamples.length)];
-      return {
-        type: 'type' as const,
-        phraseId: phrase.id,
-        question: example.translation,
-        exampleTranslation: example.translation,
-        correctAnswer: example.original,
-      };
-    }
-
-    const distractors = allPhrases
-      .filter((p) => p.id !== phrase.id)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3)
-      .map((p) => p.translatedWord);
-
-    const allOptions = [...distractors, phrase.translatedWord].sort(() => Math.random() - 0.5);
-    const correctIndex = allOptions.indexOf(phrase.translatedWord);
-
-    return {
-      type: 'select' as const,
-      phraseId: phrase.id,
-      question: phrase.originalWord,
-      options: allOptions,
-      correctIndex,
-    };
-  });
-}
+import { useQuizSession } from '../../src/quiz/useQuizSession';
+import SelectOptions from '../../src/quiz/SelectOptions';
+import TypeInput from '../../src/quiz/TypeInput';
+import QuizResults from '../../src/quiz/QuizResults';
 
 export default function QuizScreen() {
   const { phraseIds } = useLocalSearchParams<{ phraseIds?: string }>();
   const { t } = useTranslation();
-  const [isLearnSession, setIsLearnSession] = useState(!!phraseIds);
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [answered, setAnswered] = useState(false);
-  const [typedAnswer, setTypedAnswer] = useState('');
-  const [results, setResults] = useState<QuizResult[]>([]);
-  const [finished, setFinished] = useState(false);
-  const [dueCount, setDueCount] = useState(0);
-
-  const loadQuiz = useCallback(async (targetIds?: string) => {
-    setLoading(true);
-    try {
-      const page = await phrasesApi.getAll(0, 200);
-      const all = page.content;
-
-      // FixMe WTF
-      let target: PhraseResponse[];
-      if (targetIds) {
-        const ids = new Set(targetIds.split(','));
-        target = all.filter((p) => ids.has(p.id));
-      } else {
-        const due = getDuePhrases(all);
-        setDueCount(due.length);
-        target = due;
-      }
-
-      const qs = all.length >= 4 ? buildQuestions(target, all) : [];
-      setQuestions(qs);
-      setCurrentQ(0);
-      setSelected(null);
-      setTypedAnswer('');
-      setResults([]);
-      setFinished(false);
-      setAnswered(false);
-    } catch {
-      // errors handled globally by axios interceptor (toast)
-    } finally {
-      setLoading(false);
-    }
-  }, []); // stable — no external deps, targetIds passed explicitly
-
-  useEffect(() => {
-    void loadQuiz(phraseIds);
-  }, [loadQuiz, phraseIds]);
-
-  const handleNewSession = () => {
-    setIsLearnSession(false);
-    void loadQuiz(); // fresh fetch, due-phrases mode — drops stale param context
-  };
-
-  const handleSelect = async (index: number) => {
-    if (answered || questions.length === 0) return;
-    const q = questions[currentQ];
-    if (q.type !== 'select') return;
-    const correct = index === q.correctIndex;
-    setSelected(index);
-    setAnswered(true);
-    setResults((prev) => [...prev, { phraseId: q.phraseId, question: q.question, correct }]);
-    try {
-      await phrasesApi.review(q.phraseId, correct);
-    } catch {
-      // review errors are handled globally
-    }
-  };
-
-  const handleSubmitType = async () => {
-    if (answered || questions.length === 0) return;
-    const q = questions[currentQ];
-    if (q.type !== 'type') return;
-    const correct = normalize(typedAnswer) === normalize(q.correctAnswer);
-    setAnswered(true);
-    setResults((prev) => [...prev, { phraseId: q.phraseId, question: q.question, correct }]);
-    try {
-      await phrasesApi.review(q.phraseId, correct);
-    } catch {
-      // review errors are handled globally
-    }
-  };
-
-  const handleNext = () => {
-    if (currentQ < questions.length - 1) {
-      setCurrentQ(currentQ + 1);
-      setSelected(null);
-      setTypedAnswer('');
-      setAnswered(false);
-    } else {
-      setFinished(true);
-    }
-  };
-
-  const getOptionStyle = (index: number) => {
-    if (!answered) return {};
-    const q = questions[currentQ];
-    if (q.type !== 'select') return {};
-    if (index === q.correctIndex) {
-      return { borderColor: colors.success, backgroundColor: colors.successLight };
-    }
-    if (index === selected && index !== q.correctIndex) {
-      return { borderColor: colors.danger, backgroundColor: colors.dangerLight };
-    }
-    return {};
-  };
-
-  const getCircleStyle = (index: number) => {
-    if (!answered) return {};
-    const q = questions[currentQ];
-    if (q.type !== 'select') return {};
-    if (index === q.correctIndex) {
-      return { borderColor: colors.success, backgroundColor: colors.success };
-    }
-    if (index === selected && index !== q.correctIndex) {
-      return { borderColor: colors.danger, backgroundColor: colors.danger };
-    }
-    return {};
-  };
+  const {
+    loading,
+    questions,
+    currentQ,
+    selected,
+    answered,
+    typedAnswer,
+    setTypedAnswer,
+    results,
+    finished,
+    dueCount,
+    isLearnSession,
+    handleNewSession,
+    handleSelect,
+    handleSubmitType,
+    handleNext,
+  } = useQuizSession(phraseIds);
 
   if (loading) {
     return (
@@ -232,58 +63,8 @@ export default function QuizScreen() {
     );
   }
 
-  // Results screen
   if (finished) {
-    const score = results.filter((r) => r.correct).length;
-    const total = results.length;
-    const pct = Math.round((score / total) * 100);
-
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>{t('resultsTitle')}</Text>
-          </View>
-
-          <View style={styles.resultsSummary}>
-            <Text style={styles.resultsScore}>{score}/{total}</Text>
-            <Text style={styles.resultsPct}>{t('scorePercent', { pct })}</Text>
-            <View
-              style={[
-                styles.resultsBadge,
-                { backgroundColor: pct >= 70 ? colors.successLight : colors.warningLight },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.resultsBadgeText,
-                  { color: pct >= 70 ? colors.success : colors.warning },
-                ]}
-              >
-                {pct >= 90 ? t('excellent') : pct >= 70 ? t('goodJob') : t('keepPracticing')}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.sectionLabel}>{t('reviewBreakdown')}</Text>
-          {results.map((r, i) => (
-            <View key={i} style={styles.resultRow}>
-              <Ionicons
-                name={r.correct ? 'checkmark-circle' : 'close-circle'}
-                size={20}
-                color={r.correct ? colors.success : colors.danger}
-              />
-              <Text style={styles.resultTerm}>{r.question}</Text>
-            </View>
-          ))}
-
-          <TouchableOpacity style={styles.nextButton} onPress={handleNewSession}>
-            <Text style={styles.nextButtonText}>{t('newSession')}</Text>
-            <Ionicons name="refresh" size={18} color={colors.textInverse} />
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    );
+    return <QuizResults results={results} onNewSession={handleNewSession} />;
   }
 
   const question = questions[currentQ];
@@ -336,105 +117,23 @@ export default function QuizScreen() {
             ))}
           </View>
 
-          {/* Question area */}
+          {/* Question */}
           {question.type === 'select' ? (
-            <View style={styles.questionArea}>
-              <Text style={styles.questionLabel}>{t('whatDoesThisMean')}</Text>
-              <Text style={styles.questionWord}>{question.question}</Text>
-            </View>
+            <SelectOptions
+              question={question}
+              selected={selected}
+              answered={answered}
+              onSelect={handleSelect}
+            />
           ) : (
-            <View style={styles.questionArea}>
-              <Text style={styles.questionLabel}>{t('typePhraseLabel')}</Text>
-              <Text style={styles.exampleQuote}>{`"${question.exampleTranslation}"`}</Text>
-            </View>
-          )}
-
-          {/* Select options */}
-          {question.type === 'select' && (
-            <View style={styles.options}>
-              {question.options.map((option, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={[styles.option, getOptionStyle(i)]}
-                  onPress={() => handleSelect(i)}
-                  activeOpacity={0.8}
-                  disabled={answered}
-                >
-                  <View style={[styles.optionCircle, getCircleStyle(i)]}>
-                    <Text
-                      style={[
-                        styles.optionLetter,
-                        answered &&
-                          (i === question.correctIndex || i === selected) && {
-                            color: colors.textInverse,
-                          },
-                      ]}
-                    >
-                      {String.fromCharCode(65 + i)}
-                    </Text>
-                  </View>
-                  <Text style={styles.optionText}>{option}</Text>
-                  {answered && i === question.correctIndex && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={colors.success}
-                      style={{ marginLeft: 'auto' }}
-                    />
-                  )}
-                  {answered && i === selected && i !== question.correctIndex && (
-                    <Ionicons
-                      name="close-circle"
-                      size={20}
-                      color={colors.danger}
-                      style={{ marginLeft: 'auto' }}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {/* Type input */}
-          {question.type === 'type' && (
-            <View>
-              <TextInput
-                style={[
-                  styles.typeInput,
-                  answered && {
-                    borderColor: lastResult?.correct ? colors.success : colors.danger,
-                    backgroundColor: lastResult?.correct ? colors.successLight : colors.dangerLight,
-                  },
-                ]}
-                value={typedAnswer}
-                onChangeText={setTypedAnswer}
-                placeholder={t('typeAnswerPlaceholder')}
-                placeholderTextColor={colors.textTertiary}
-                editable={!answered}
-                returnKeyType="done"
-                onSubmitEditing={handleSubmitType}
-                autoCapitalize="none"
-                autoCorrect={false}
-                underlineColorAndroid="transparent"
-              />
-              {answered && !lastResult?.correct && (
-                <View style={styles.correctAnswerBox}>
-                  <Text style={styles.correctAnswerLabel}>{t('correctAnswerLabel')}</Text>
-                  <Text style={styles.correctAnswerText}>{question.correctAnswer}</Text>
-                </View>
-              )}
-              {!answered && (
-                <TouchableOpacity
-                  style={[styles.checkButton, !typedAnswer.trim() && styles.checkButtonDisabled]}
-                  onPress={handleSubmitType}
-                  disabled={!typedAnswer.trim()}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.nextButtonText}>{t('checkAnswer')}</Text>
-                  <Ionicons name="checkmark" size={18} color={colors.textInverse} />
-                </TouchableOpacity>
-              )}
-            </View>
+            <TypeInput
+              question={question}
+              answered={answered}
+              typedAnswer={typedAnswer}
+              onChangeText={setTypedAnswer}
+              onSubmit={handleSubmitType}
+              isCorrect={lastResult?.correct ?? null}
+            />
           )}
 
           {/* Next button */}
@@ -535,105 +234,6 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
   },
-  questionArea: {
-    alignItems: 'center',
-    marginBottom: spacing.xxxl,
-  },
-  questionLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  questionWord: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.5,
-  },
-  exampleQuote: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: colors.text,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    lineHeight: 28,
-    paddingHorizontal: spacing.md,
-  },
-  options: {
-    gap: 12,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  optionCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: colors.borderHover,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  optionLetter: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  optionText: {
-    fontSize: 15,
-    color: colors.text,
-    flex: 1,
-  },
-  typeInput: {
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md + spacing.sm,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    marginBottom: spacing.md,
-  },
-  checkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: radius.lg,
-    marginTop: spacing.sm,
-  },
-  checkButtonDisabled: {
-    backgroundColor: colors.borderHover,
-  },
-  correctAnswerBox: {
-    padding: spacing.lg,
-    backgroundColor: colors.dangerLight,
-    borderRadius: radius.md,
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  correctAnswerLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.danger,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  correctAnswerText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -648,53 +248,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.textInverse,
-  },
-  // Results screen
-  resultsSummary: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-    gap: spacing.md,
-  },
-  resultsScore: {
-    fontSize: 56,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -1,
-  },
-  resultsPct: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  resultsBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    marginTop: spacing.sm,
-  },
-  resultsBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  resultTerm: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.text,
-    flex: 1,
   },
 });
