@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -32,6 +33,7 @@ export default function HomeScreen() {
   const [recentWords, setRecentWords] = useState<WordResponse[]>([]);
   const [totalWords, setTotalWords] = useState(0);
   const [loadingWords, setLoadingWords] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [term, setTerm] = useState('');
@@ -55,6 +57,12 @@ export default function HomeScreen() {
     void loadWords();
   }, [loadWords]);
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadWords();
+    setRefreshing(false);
+  }, [loadWords]);
+
   const handleAddWord = async () => {
     if (!term.trim() || saving) return;
     setSaving(true);
@@ -74,6 +82,9 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+        }
       >
         {/* Header */}
         <View style={styles.header}>

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ export default function QuizScreen() {
   const { t } = useTranslation();
   const {
     loading,
+    refreshing,
     questions,
     currentQ,
     selected,
@@ -25,6 +26,7 @@ export default function QuizScreen() {
     dueCount,
     isLearnSession,
     handleNewSession,
+    handleRefresh,
     handleSelect,
     handleSubmitType,
     handleNext,
@@ -44,27 +46,34 @@ export default function QuizScreen() {
     const isEmpty = !isLearnSession && dueCount === 0;
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <View style={styles.emptyIcon}>
-            <Ionicons
-              name={isEmpty ? 'checkmark-done-circle-outline' : 'library-outline'}
-              size={48}
-              color={isEmpty ? colors.success : colors.textTertiary}
-            />
+        <ScrollView
+          contentContainerStyle={styles.centeredContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+          }
+        >
+          <View style={styles.centered}>
+            <View style={styles.emptyIcon}>
+              <Ionicons
+                name={isEmpty ? 'checkmark-done-circle-outline' : 'library-outline'}
+                size={48}
+                color={isEmpty ? colors.success : colors.textTertiary}
+              />
+            </View>
+            <Text style={styles.emptyTitle}>
+              {isEmpty ? t('allCaughtUp') : t('notEnoughPhrases')}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {isEmpty ? t('nothingDue') : t('addFourPhrases')}
+            </Text>
           </View>
-          <Text style={styles.emptyTitle}>
-            {isEmpty ? t('allCaughtUp') : t('notEnoughPhrases')}
-          </Text>
-          <Text style={styles.emptySubtitle}>
-            {isEmpty ? t('nothingDue') : t('addFourPhrases')}
-          </Text>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   if (finished) {
-    return <QuizResults results={results} onNewSession={handleNewSession} />;
+    return <QuizResults results={results} onNewSession={handleNewSession} refreshing={refreshing} onRefresh={handleRefresh} />;
   }
 
   const question = questions[currentQ];
@@ -73,7 +82,13 @@ export default function QuizScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+          }
+        >
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -155,6 +170,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centeredContent: {
+    flexGrow: 1,
   },
   centered: {
     flex: 1,

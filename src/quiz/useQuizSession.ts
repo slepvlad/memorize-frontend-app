@@ -50,6 +50,7 @@ export function useQuizSession(phraseIds: string | undefined) {
   const [isLearnSession, setIsLearnSession] = useState(!!phraseIds);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -58,8 +59,9 @@ export function useQuizSession(phraseIds: string | undefined) {
   const [finished, setFinished] = useState(false);
   const [dueCount, setDueCount] = useState(0);
 
-  const loadQuiz = useCallback(async (targetIds?: string) => {
-    setLoading(true);
+  // silent=true skips the full-screen loading spinner (used for pull-to-refresh)
+  const loadQuiz = useCallback(async (targetIds?: string, silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const page = await phrasesApi.getAll(0, 200);
       const all = page.content;
@@ -85,9 +87,15 @@ export function useQuizSession(phraseIds: string | undefined) {
     } catch {
       // errors handled globally by axios interceptor (toast)
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []); // stable — no external deps, targetIds passed explicitly
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadQuiz(undefined, true);
+    setRefreshing(false);
+  }, [loadQuiz]);
 
   useEffect(() => {
     void loadQuiz(phraseIds);
@@ -140,6 +148,7 @@ export function useQuizSession(phraseIds: string | undefined) {
 
   return {
     loading,
+    refreshing,
     questions,
     currentQ,
     selected,
@@ -151,6 +160,7 @@ export function useQuizSession(phraseIds: string | undefined) {
     dueCount,
     isLearnSession,
     handleNewSession,
+    handleRefresh,
     handleSelect,
     handleSubmitType,
     handleNext,

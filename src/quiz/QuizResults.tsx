@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -8,9 +8,11 @@ import { QuizResult } from './types';
 interface Props {
   results: QuizResult[];
   onNewSession: () => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
-export default function QuizResults({ results, onNewSession }: Props) {
+export default function QuizResults({ results, onNewSession, refreshing = false, onRefresh }: Props) {
   const { t } = useTranslation();
   const score = results.filter((r) => r.correct).length;
   const total = results.length;
@@ -18,7 +20,14 @@ export default function QuizResults({ results, onNewSession }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+          ) : undefined
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('resultsTitle')}</Text>
         </View>

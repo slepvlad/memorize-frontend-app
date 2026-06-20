@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,7 @@ export default function LearnScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [finished, setFinished] = useState(false);
   const { t } = useTranslation();
 
@@ -41,6 +42,12 @@ export default function LearnScreen() {
 
   useEffect(() => {
     void loadPhrases();
+  }, [loadPhrases]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadPhrases();
+    setRefreshing(false);
   }, [loadPhrases]);
 
   const handleFlip = () => setIsFlipped(!isFlipped);
@@ -70,13 +77,19 @@ export default function LearnScreen() {
     );
   }
 
+  const refreshControl = (
+    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+  );
+
   if (allPhrasesCount === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>{t('noPhrasesTitle')}</Text>
-          <Text style={styles.emptySubtitle}>{t('noPhrasesHint')}</Text>
-        </View>
+        <ScrollView contentContainerStyle={styles.centeredContent} refreshControl={refreshControl}>
+          <View style={styles.centered}>
+            <Text style={styles.emptyTitle}>{t('noPhrasesTitle')}</Text>
+            <Text style={styles.emptySubtitle}>{t('noPhrasesHint')}</Text>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -84,13 +97,15 @@ export default function LearnScreen() {
   if (phrases.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <View style={styles.completionIcon}>
-            <Ionicons name="checkmark-done-circle-outline" size={64} color={colors.success} />
+        <ScrollView contentContainerStyle={styles.centeredContent} refreshControl={refreshControl}>
+          <View style={styles.centered}>
+            <View style={styles.completionIcon}>
+              <Ionicons name="checkmark-done-circle-outline" size={64} color={colors.success} />
+            </View>
+            <Text style={styles.emptyTitle}>{t('allCaughtUp')}</Text>
+            <Text style={styles.emptySubtitle}>{t('nothingDue')}</Text>
           </View>
-          <Text style={styles.emptyTitle}>{t('allCaughtUp')}</Text>
-          <Text style={styles.emptySubtitle}>{t('nothingDue')}</Text>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -199,6 +214,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centeredContent: {
+    flexGrow: 1,
   },
   centered: {
     flex: 1,

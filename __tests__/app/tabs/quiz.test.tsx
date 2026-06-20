@@ -435,6 +435,75 @@ describe('QuizScreen — type challenge', () => {
   });
 });
 
+describe('QuizScreen — pull to refresh', () => {
+  it('re-fetches phrases when pulled down during active quiz', async () => {
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByText('Quiz'));
+    const callsBefore = mockGetAll.mock.calls.length;
+    const [scrollView] = screen.UNSAFE_getAllByType(require('react-native').ScrollView);
+    await act(async () => {
+      scrollView.props.refreshControl.props.onRefresh();
+    });
+    expect(mockGetAll.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it('re-fetches phrases when pulled down on empty state', async () => {
+    mockGetAll.mockResolvedValue(makePage([]));
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByText('All caught up!'));
+    const callsBefore = mockGetAll.mock.calls.length;
+    const [scrollView] = screen.UNSAFE_getAllByType(require('react-native').ScrollView);
+    await act(async () => {
+      scrollView.props.refreshControl.props.onRefresh();
+    });
+    expect(mockGetAll.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it('re-fetches phrases when pulled down on results screen', async () => {
+    render(<QuizScreen />);
+    // complete the quiz quickly
+    await waitFor(() => screen.getByText('Привет мир'));
+    fireEvent.press(screen.getByText('Привет мир'));
+    await waitFor(() => screen.getByText('Next question'));
+    fireEvent.press(screen.getByText('Next question'));
+    await waitFor(() => screen.getByText('Доброе утро'));
+    fireEvent.press(screen.getByText('Доброе утро'));
+    await waitFor(() => screen.getByText('Next question'));
+    fireEvent.press(screen.getByText('Next question'));
+    await waitFor(() => screen.getByText('Спасибо'));
+    fireEvent.press(screen.getByText('Спасибо'));
+    await waitFor(() => screen.getByText('Next question'));
+    fireEvent.press(screen.getByText('Next question'));
+    await waitFor(() => screen.getByText('До свидания'));
+    fireEvent.press(screen.getByText('До свидания'));
+    await waitFor(() => screen.getByText('See results'));
+    fireEvent.press(screen.getByText('See results'));
+    await waitFor(() => screen.getByText('Results'));
+
+    const callsBefore = mockGetAll.mock.calls.length;
+    const [scrollView] = screen.UNSAFE_getAllByType(require('react-native').ScrollView);
+    await act(async () => {
+      scrollView.props.refreshControl.props.onRefresh();
+    });
+    expect(mockGetAll.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it('does not show full-screen spinner during refresh (silent load)', async () => {
+    // Use a delayed mock so we can observe the state mid-refresh
+    let resolveGetAll!: (v: unknown) => void;
+    render(<QuizScreen />);
+    await waitFor(() => screen.getByText('Quiz'));
+
+    mockGetAll.mockReturnValueOnce(new Promise((r) => { resolveGetAll = r; }));
+    const [scrollView] = screen.UNSAFE_getAllByType(require('react-native').ScrollView);
+    act(() => { scrollView.props.refreshControl.props.onRefresh(); });
+
+    // Quiz should still be visible (no full-screen spinner replaced it)
+    expect(screen.queryByText('Quiz')).toBeTruthy();
+    await act(async () => { resolveGetAll(makePage()); });
+  });
+});
+
 describe('QuizScreen — New session resets learn context', () => {
   const completeQuiz = async () => {
     await waitFor(() => screen.getByText('Привет мир'));
