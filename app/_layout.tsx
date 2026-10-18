@@ -6,6 +6,7 @@ import { ActivityIndicator, View, Platform } from 'react-native';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ToastProvider } from '../src/context/ToastContext';
 import { LanguageProvider, useLanguage } from '../src/context/LanguageContext';
+import { ProfileProvider } from '../src/context/ProfileContext';
 import { WebContainer } from '../src/components/ui/WebContainer';
 import { colors } from '../src/theme';
 
@@ -80,6 +81,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="profile" />
       </Stack>
     </WebContainer>
   );
@@ -89,9 +91,11 @@ export default function RootLayout() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <LanguageProvider>
-          <RootLayoutNav />
-        </LanguageProvider>
+        <ProfileProvider>
+          <LanguageProvider>
+            <RootLayoutNav />
+          </LanguageProvider>
+        </ProfileProvider>
       </AuthProvider>
     </ToastProvider>
   );

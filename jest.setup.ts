@@ -16,6 +16,10 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
+// Mock reanimated + worklets (native module is unavailable in Jest)
+jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+
 // Mock expo-status-bar
 jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,

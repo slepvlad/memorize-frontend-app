@@ -146,6 +146,27 @@ const en = {
   mastered: 'Mastered',
   learning: 'Learning',
 
+  // Profile
+  profileTitle: 'Profile',
+  changePhoto: 'Change photo',
+  removePhoto: 'Remove photo',
+  photoPermissionDenied: 'Allow photo access in Settings to change your avatar.',
+  avatarUpdated: 'Profile photo updated',
+  avatarRemoved: 'Profile photo removed',
+  account: 'Account',
+  changeEmail: 'Change email',
+  changePassword: 'Change password',
+  newEmailLabel: 'New email',
+  sameEmail: 'This is already your email',
+  currentPasswordLabel: 'Current password',
+  newPasswordLabel: 'New password',
+  confirmNewPasswordLabel: 'Confirm new password',
+  samePassword: 'New password must differ from the current one',
+  emailChangeRequested: 'Check your new inbox to confirm the change',
+  passwordChanged: 'Password changed',
+  studyLanguages: 'Study languages',
+  logOut: 'Log out',
+
   // Tab labels
   tabHome: 'Home',
   tabLearn: 'Learn',

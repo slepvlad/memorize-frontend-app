@@ -8,7 +8,9 @@ import { triggerToast } from '../context/ToastContext';
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
 export const API_BASE_URL = devHost
   ? `http://${devHost}:8080`
-  : 'http://localhost:8080';
+  : 'https://recallingo.com';
+
+//export const API_BASE_URL = 'https://recallingo.com';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -121,7 +123,12 @@ apiClient.interceptors.response.use(
     // Auth endpoints (login/register) display their own inline error banners — skip toast for those.
     // 401s are handled by the token refresh flow above.
     const isAuthEndpoint = /\/api\/auth\/(login|register)/.test(error.config?.url ?? '');
-    if (error.response?.status !== 401 && !isAuthEndpoint) {
+    // GET avatar 404 just means "no avatar set" — not an error worth a toast.
+    const isMissingAvatar =
+      error.response?.status === 404 &&
+      error.config?.method === 'get' &&
+      /\/api\/v1\/users\/me\/avatar$/.test(error.config?.url ?? '');
+    if (error.response?.status !== 401 && !isAuthEndpoint && !isMissingAvatar) {
       const message =
         (error.response?.data as any)?.message ||
         (error.response?.data as any)?.error ||

@@ -1,24 +1,38 @@
 {
   "expo": {
-    "name": "memorize",
-    "slug": "memorize",
+    "name": "Recallingo",
+    "slug": "recallingo",
     "version": "1.0.0",
-    "scheme": "memorize",
+    "scheme": "recallingo",
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-localization",
+      "expo-font",
+      "expo-image",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-status-bar",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Recallingo to access your photos to set a profile picture."
+        }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.memorize"
+      "bundleIdentifier": "com.recallingo"
     },
     "android": {
       "adaptiveIcon": {

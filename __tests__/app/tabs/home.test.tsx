@@ -5,9 +5,20 @@ import { AuthProvider } from '../../../src/context/AuthContext';
 import { authApi } from '../../../src/api/auth';
 import { tokenStorage } from '../../../src/storage/tokenStorage';
 import { wordsApi } from '../../../src/api/words';
+import { phrasesApi } from '../../../src/api/phrases';
 
 jest.mock('../../../src/api/words', () => ({
-  wordsApi: { getAll: jest.fn(), create: jest.fn() },
+  wordsApi: { create: jest.fn() },
+}));
+
+jest.mock('../../../src/api/phrases', () => ({
+  phrasesApi: { getAll: jest.fn() },
+}));
+
+const mockRefreshProfile = jest.fn();
+const mockUseProfile = jest.fn();
+jest.mock('../../../src/context/ProfileContext', () => ({
+  useProfile: () => mockUseProfile(),
 }));
 
 jest.mock('../../../src/context/LanguageContext', () => ({
@@ -31,7 +42,7 @@ jest.mock('../../../src/storage/tokenStorage', () => ({
   tokenStorage: { getAccessToken: jest.fn(), setTokens: jest.fn(), clearTokens: jest.fn(), getRefreshToken: jest.fn() },
 }));
 
-const mockGetAll = wordsApi.getAll as jest.Mock;
+const mockGetAll = phrasesApi.getAll as jest.Mock;
 const mockCreate = wordsApi.create as jest.Mock;
 const mockLogout = authApi.logout as jest.Mock;
 const mockGetAccessToken = tokenStorage.getAccessToken as jest.Mock;
@@ -39,9 +50,9 @@ const mockRefreshToken = authApi.refreshToken as jest.Mock;
 const { _mockRouter } = require('expo-router');
 
 const mockWords = [
-  { id: '1', term: 'Ephemeral', definition: 'Lasting for a very short time', interval: 1, repetitions: 0, easiness_factor: 2.5, next_review_date: '2026-04-09' },
-  { id: '2', term: 'Ubiquitous', definition: 'Present everywhere', interval: 1, repetitions: 2, easiness_factor: 2.5, next_review_date: '2026-04-10' },
-  { id: '3', term: 'Resilient', definition: 'Able to recover quickly', interval: 1, repetitions: 1, easiness_factor: 2.5, next_review_date: '2026-04-11' },
+  { id: '1', originalWord: 'Ephemeral', translatedWord: 'Lasting for a very short time', originalLanguage: 'ENGLISH', translatedLanguage: 'RUSSIAN', originalAudioId: null, translatedAudioId: null, examples: [], interval: 1, repetitions: 0, easiness_factor: 2.5, next_review_date: '2026-04-09' },
+  { id: '2', originalWord: 'Ubiquitous', translatedWord: 'Present everywhere', originalLanguage: 'ENGLISH', translatedLanguage: 'RUSSIAN', originalAudioId: null, translatedAudioId: null, examples: [], interval: 1, repetitions: 2, easiness_factor: 2.5, next_review_date: '2026-04-10' },
+  { id: '3', originalWord: 'Resilient', translatedWord: 'Able to recover quickly', originalLanguage: 'ENGLISH', translatedLanguage: 'RUSSIAN', originalAudioId: null, translatedAudioId: null, examples: [], interval: 1, repetitions: 1, easiness_factor: 2.5, next_review_date: '2026-04-11' },
 ];
 
 const mockPage = {
@@ -68,6 +79,8 @@ beforeEach(() => {
   mockLogout.mockResolvedValue(undefined);
   mockGetAll.mockResolvedValue(mockPage);
   mockCreate.mockResolvedValue(mockWords[0]);
+  mockRefreshProfile.mockResolvedValue(undefined);
+  mockUseProfile.mockReturnValue({ profile: null, avatarUri: null, refreshProfile: mockRefreshProfile });
 });
 
 describe('HomeScreen — rendering', () => {
@@ -122,7 +135,7 @@ describe('HomeScreen — rendering', () => {
     await waitFor(() => expect(screen.getAllByText('Reviewed').length).toBeGreaterThan(0));
   });
 
-  it('shows word definitions as subtitles', async () => {
+  it('shows translations as subtitles', async () => {
     renderScreen();
     await waitFor(() => expect(screen.getByText('Lasting for a very short time')).toBeTruthy());
   });
@@ -135,9 +148,22 @@ describe('HomeScreen — rendering', () => {
     );
   });
 
-  it('calls wordsApi.getAll with page=0, size=5 on mount', async () => {
+  it('calls phrasesApi.getAll with page=0, size=5 on mount', async () => {
     renderScreen();
     await waitFor(() => expect(mockGetAll).toHaveBeenCalledWith(0, 5));
+  });
+});
+
+describe('HomeScreen — pull to refresh', () => {
+  it('reloads words and the profile avatar', async () => {
+    renderScreen();
+    await waitFor(() => screen.getByText('Ephemeral'));
+    const [scrollView] = screen.UNSAFE_getAllByType(require('react-native').ScrollView);
+    await act(async () => {
+      await scrollView.props.refreshControl.props.onRefresh();
+    });
+    expect(mockGetAll).toHaveBeenCalledTimes(2);
+    expect(mockRefreshProfile).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -157,12 +183,28 @@ describe('HomeScreen — navigation', () => {
   });
 });
 
-describe('HomeScreen — logout', () => {
-  it('calls logout when avatar is pressed', async () => {
+describe('HomeScreen — profile', () => {
+  it('navigates to profile when avatar is pressed', async () => {
     renderScreen();
     await waitFor(() => screen.getByText('L'));
-    fireEvent.press(screen.getByText('L'));
-    expect(mockLogout).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByTestId('profile-avatar'));
+    expect(_mockRouter.push).toHaveBeenCalledWith('/profile');
+    expect(mockLogout).not.toHaveBeenCalled();
+  });
+
+  it('shows the email initial when the user has no avatar', async () => {
+    mockUseProfile.mockReturnValue({ profile: { id: 'u1', email: 'vova@test.com' }, avatarUri: null, refreshProfile: mockRefreshProfile });
+    renderScreen();
+    await waitFor(() => screen.getByText('V'));
+    expect(screen.queryByTestId('profile-avatar-image')).toBeNull();
+  });
+
+  it('shows the avatar image when the user has one', async () => {
+    mockUseProfile.mockReturnValue({ profile: { id: 'u1', email: 'vova@test.com' }, avatarUri: 'data:image/png;base64,aGk=', refreshProfile: mockRefreshProfile });
+    renderScreen();
+    const image = await screen.findByTestId('profile-avatar-image');
+    expect(image.props.source).toEqual({ uri: 'data:image/png;base64,aGk=' });
+    expect(screen.queryByText('V')).toBeNull();
   });
 });
 

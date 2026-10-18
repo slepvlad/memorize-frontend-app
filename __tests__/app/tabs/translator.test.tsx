@@ -6,7 +6,7 @@ import { phrasesApi } from '../../../src/api/phrases';
 import { useLanguage } from '../../../src/context/LanguageContext';
 import { _mockRouter } from 'expo-router';
 
-jest.mock('@react-navigation/bottom-tabs', () => ({
+jest.mock('expo-router/js-tabs', () => ({
   useBottomTabBarHeight: () => 85,
 }));
 

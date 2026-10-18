@@ -11,26 +11,28 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../src/context/AuthContext';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
+import { useProfile } from '../../src/context/ProfileContext';
 import { wordsApi, WordResponse } from '../../src/api/words';
 import { colors, spacing, radius } from '../../src/theme';
+import {PhraseResponse, phrasesApi} from "../../src/api/phrases";
 
 export default function HomeScreen() {
-  const { logout } = useAuth();
   const { t } = useTranslation();
   const { nativeLanguage, studiedLanguage } = useLanguage();
+  const { profile, avatarUri, refreshProfile } = useProfile();
   const router = useRouter();
 
   const studiedLang = SUPPORTED_LANGUAGES.find((l) => l.code === studiedLanguage);
   const nativeLang = SUPPORTED_LANGUAGES.find((l) => l.code === nativeLanguage);
 
-  const [recentWords, setRecentWords] = useState<WordResponse[]>([]);
+  const [recentWords, setRecentWords] = useState<PhraseResponse[]>([]);
   const [totalWords, setTotalWords] = useState(0);
   const [loadingWords, setLoadingWords] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,7 +45,7 @@ export default function HomeScreen() {
   const loadWords = useCallback(async () => {
     setLoadingWords(true);
     try {
-      const page = await wordsApi.getAll(0, 5);
+      const page = await phrasesApi.getAll(0,5);
       setRecentWords(page.content.slice(0, 3));
       setTotalWords(page.totalElements);
     } catch {
@@ -59,9 +61,9 @@ export default function HomeScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadWords();
+    await Promise.all([loadWords(), refreshProfile()]);
     setRefreshing(false);
-  }, [loadWords]);
+  }, [loadWords, refreshProfile]);
 
   const handleAddWord = async () => {
     if (!term.trim() || saving) return;
@@ -104,8 +106,16 @@ export default function HomeScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={logout} style={styles.avatar}>
-              <Text style={styles.avatarText}>L</Text>
+            <TouchableOpacity
+              onPress={() => router.push('/profile')}
+              style={styles.avatar}
+              testID="profile-avatar"
+            >
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} testID="profile-avatar-image" />
+              ) : (
+                <Text style={styles.avatarText}>{profile?.email?.[0]?.toUpperCase() ?? 'L'}</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -165,9 +175,9 @@ export default function HomeScreen() {
           recentWords.map((item) => (
             <View key={item.id} style={styles.wordRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.wordText}>{item.term}</Text>
-                {item.definition ? (
-                  <Text style={styles.wordMeaning} numberOfLines={1}>{item.definition}</Text>
+                <Text style={styles.wordText}>{item.originalWord}</Text>
+                {item.translatedWord ? (
+                  <Text style={styles.wordMeaning} numberOfLines={1}>{item.translatedWord}</Text>
                 ) : null}
               </View>
               <View
@@ -304,6 +314,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     color: colors.textInverse,

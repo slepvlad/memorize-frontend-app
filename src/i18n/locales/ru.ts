@@ -146,6 +146,27 @@ const ru = {
   mastered: 'Освоено',
   learning: 'Учится',
 
+  // Profile
+  profileTitle: 'Профиль',
+  changePhoto: 'Сменить фото',
+  removePhoto: 'Удалить фото',
+  photoPermissionDenied: 'Разрешите доступ к фото в Настройках, чтобы сменить аватар.',
+  avatarUpdated: 'Фото профиля обновлено',
+  avatarRemoved: 'Фото профиля удалено',
+  account: 'Аккаунт',
+  changeEmail: 'Сменить email',
+  changePassword: 'Сменить пароль',
+  newEmailLabel: 'Новый email',
+  sameEmail: 'Это уже ваш email',
+  currentPasswordLabel: 'Текущий пароль',
+  newPasswordLabel: 'Новый пароль',
+  confirmNewPasswordLabel: 'Подтвердите новый пароль',
+  samePassword: 'Новый пароль должен отличаться от текущего',
+  emailChangeRequested: 'Проверьте новый почтовый ящик, чтобы подтвердить изменение',
+  passwordChanged: 'Пароль изменён',
+  studyLanguages: 'Изучаемые языки',
+  logOut: 'Выйти',
+
   // Tab labels
   tabHome: 'Главная',
   tabLearn: 'Учить',
