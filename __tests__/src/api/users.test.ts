@@ -13,11 +13,15 @@ jest.mock('../../../src/api/client', () => ({
   },
 }));
 
+jest.mock('../../../src/storage/tokenStorage', () => ({
+  tokenStorage: { setTokens: jest.fn() },
+}));
+
 import apiClient from '../../../src/api/client';
+import { tokenStorage } from '../../../src/storage/tokenStorage';
 
 const mockGet = apiClient.get as jest.Mock;
 const mockPost = apiClient.post as jest.Mock;
-const mockPut = apiClient.put as jest.Mock;
 const mockDelete = apiClient.delete as jest.Mock;
 
 const profile = { id: 'u1', email: 'me@test.com' };
@@ -113,17 +117,27 @@ describe('usersApi', () => {
     expect(mockDelete).toHaveBeenCalledWith('/api/v1/users/me/avatar');
   });
 
-  it('changePassword sends PUT with both passwords', async () => {
-    mockPut.mockResolvedValueOnce({ data: { message: 'ok' } });
+  it('changePassword sends POST with both passwords and stores the new tokens', async () => {
+    mockPost.mockResolvedValueOnce({ data: { access_token: 'acc', refresh_token: 'ref' } });
     const req = { currentPassword: 'old123', newPassword: 'new123' };
-    await expect(usersApi.changePassword(req)).resolves.toEqual({ message: 'ok' });
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/users/me/password', req);
+    await usersApi.changePassword(req);
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/users/me/password', req);
+    expect(tokenStorage.setTokens).toHaveBeenCalledWith('acc', 'ref');
   });
 
-  it('changeEmail sends PUT with new email and password', async () => {
-    mockPut.mockResolvedValueOnce({ data: { message: 'ok' } });
-    const req = { newEmail: 'new@test.com', currentPassword: 'pw' };
-    await expect(usersApi.changeEmail(req)).resolves.toEqual({ message: 'ok' });
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/users/me/email', req);
+  it('changePassword does not touch tokens when the request fails', async () => {
+    (tokenStorage.setTokens as jest.Mock).mockClear();
+    mockPost.mockRejectedValueOnce(httpError(400));
+    await expect(
+      usersApi.changePassword({ currentPassword: 'bad', newPassword: 'new123' })
+    ).rejects.toBeTruthy();
+    expect(tokenStorage.setTokens).not.toHaveBeenCalled();
+  });
+
+  it('requestEmailChange sends POST with the new email only', async () => {
+    mockPost.mockResolvedValueOnce({ data: { message: 'ok' } });
+    const req = { newEmail: 'new@test.com' };
+    await expect(usersApi.requestEmailChange(req)).resolves.toEqual({ message: 'ok' });
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/users/me/email', req);
   });
 });

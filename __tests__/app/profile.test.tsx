@@ -1,9 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { AxiosError } from 'axios';
 import ProfileScreen from '../../app/profile';
 import { usersApi } from '../../src/api/users';
 import { ProfileProvider } from '../../src/context/ProfileContext';
+import { pendingEmailStorage } from '../../src/storage/pendingEmailStorage';
 
 jest.mock('expo-image-picker', () => ({
   requestMediaLibraryPermissionsAsync: jest.fn(),
@@ -17,8 +19,12 @@ jest.mock('../../src/api/users', () => ({
     uploadAvatar: jest.fn(),
     deleteAvatar: jest.fn(),
     changePassword: jest.fn(),
-    changeEmail: jest.fn(),
+    requestEmailChange: jest.fn(),
   },
+}));
+
+jest.mock('../../src/storage/pendingEmailStorage', () => ({
+  pendingEmailStorage: { get: jest.fn(), set: jest.fn(), clear: jest.fn() },
 }));
 
 const mockLogout = jest.fn();
@@ -45,7 +51,9 @@ const mockGetAvatar = usersApi.getAvatar as jest.Mock;
 const mockUpload = usersApi.uploadAvatar as jest.Mock;
 const mockDeleteAvatar = usersApi.deleteAvatar as jest.Mock;
 const mockChangePassword = usersApi.changePassword as jest.Mock;
-const mockChangeEmail = usersApi.changeEmail as jest.Mock;
+const mockChangeEmail = usersApi.requestEmailChange as jest.Mock;
+const mockPendingGet = pendingEmailStorage.get as jest.Mock;
+const mockPendingSet = pendingEmailStorage.set as jest.Mock;
 const mockRequestPermission = ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock;
 const mockLaunchLibrary = ImagePicker.launchImageLibraryAsync as jest.Mock;
 
@@ -68,6 +76,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockGetMe.mockResolvedValue(profile);
   mockGetAvatar.mockResolvedValue(null);
+  mockPendingGet.mockResolvedValue(null);
 });
 
 describe('ProfileScreen — rendering', () => {
@@ -217,7 +226,16 @@ describe('ProfileScreen — change email', () => {
     await openForm();
     fireEvent.press(screen.getByText('Save'));
     expect(screen.getByText('Email is required')).toBeTruthy();
-    expect(screen.getByText('Password is required')).toBeTruthy();
+    expect(screen.getByText('Please confirm the new email')).toBeTruthy();
+    expect(mockChangeEmail).not.toHaveBeenCalled();
+  });
+
+  it('rejects a confirmation that does not match', async () => {
+    await openForm();
+    fireEvent.changeText(screen.getByTestId('new-email-input'), 'new@test.com');
+    fireEvent.changeText(screen.getByTestId('confirm-email-input'), 'other@test.com');
+    fireEvent.press(screen.getByText('Save'));
+    expect(screen.getByText('Emails do not match')).toBeTruthy();
     expect(mockChangeEmail).not.toHaveBeenCalled();
   });
 
@@ -237,23 +255,32 @@ describe('ProfileScreen — change email', () => {
     mockChangeEmail.mockResolvedValue({ message: 'ok' });
     await openForm();
     fireEvent.changeText(screen.getByTestId('new-email-input'), ' new@test.com ');
-    fireEvent.changeText(screen.getByTestId('email-current-password-input'), 'secret');
+    fireEvent.changeText(screen.getByTestId('confirm-email-input'), 'NEW@test.com');
     fireEvent.press(screen.getByText('Save'));
 
     await waitFor(() => expect(screen.queryByTestId('new-email-input')).toBeNull());
-    expect(mockChangeEmail).toHaveBeenCalledWith({ newEmail: 'new@test.com', currentPassword: 'secret' });
-    expect(mockShowToast).toHaveBeenCalledWith('Check your new inbox to confirm the change', 'success');
+    expect(mockChangeEmail).toHaveBeenCalledWith({ newEmail: 'new@test.com' });
+    expect(mockPendingSet).toHaveBeenCalledWith({ userId: 'u1', email: 'new@test.com' });
+    expect(mockShowToast).toHaveBeenCalledWith('We sent a confirmation link to new@test.com', 'success');
+    expect(screen.getByTestId('pending-email')).toHaveTextContent(/Waiting for confirmation: new@test.com/);
   });
 
   it('keeps the form open on failure', async () => {
     mockChangeEmail.mockRejectedValue(new Error('fail'));
     await openForm();
     fireEvent.changeText(screen.getByTestId('new-email-input'), 'new@test.com');
-    fireEvent.changeText(screen.getByTestId('email-current-password-input'), 'secret');
+    fireEvent.changeText(screen.getByTestId('confirm-email-input'), 'new@test.com');
     fireEvent.press(screen.getByText('Save'));
 
     await waitFor(() => expect(mockChangeEmail).toHaveBeenCalled());
     expect(screen.getByTestId('new-email-input')).toBeTruthy();
+    expect(screen.queryByTestId('pending-email')).toBeNull();
+  });
+
+  it('shows the stored pending change on open', async () => {
+    mockPendingGet.mockResolvedValue({ userId: 'u1', email: 'new@test.com' });
+    await renderLoaded();
+    await waitFor(() => expect(screen.getByTestId('pending-email')).toBeTruthy());
   });
 });
 
@@ -298,7 +325,7 @@ describe('ProfileScreen — change password', () => {
   });
 
   it('submits and closes the form on success', async () => {
-    mockChangePassword.mockResolvedValue({ message: 'ok' });
+    mockChangePassword.mockResolvedValue(undefined);
     await openForm();
     fill('old123', 'new123', 'new123');
 
@@ -314,5 +341,20 @@ describe('ProfileScreen — change password', () => {
 
     await waitFor(() => expect(mockChangePassword).toHaveBeenCalled());
     expect(screen.getByTestId('new-password-input')).toBeTruthy();
+    expect(screen.queryByText('Current password is incorrect')).toBeNull();
+  });
+
+  it('shows an inline error when the current password is wrong (400)', async () => {
+    mockChangePassword.mockRejectedValue(
+      new AxiosError('fail', '400', undefined, undefined, {
+        status: 400, statusText: '', data: { detail: 'Current password is incorrect' }, headers: {}, config: {} as any,
+      })
+    );
+    await openForm();
+    fill('wrong1', 'new123', 'new123');
+
+    expect(await screen.findByText('Current password is incorrect')).toBeTruthy();
+    expect(screen.getByTestId('new-password-input')).toBeTruthy();
+    expect(mockShowToast).not.toHaveBeenCalledWith('Password changed', 'success');
   });
 });

@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 import apiClient from './client';
+import type { AuthResponse } from './auth';
+import { tokenStorage } from '../storage/tokenStorage';
 
 export interface UserProfile {
   id: string;
@@ -12,9 +14,8 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-export interface ChangeEmailRequest {
+export interface EmailChangeRequest {
   newEmail: string;
-  currentPassword: string;
 }
 
 export interface MessageResponse {
@@ -77,13 +78,15 @@ export const usersApi = {
     await apiClient.delete('/api/v1/users/me/avatar');
   },
 
-  changePassword: async (request: ChangePasswordRequest): Promise<MessageResponse> => {
-    const { data } = await apiClient.put<MessageResponse>('/api/v1/users/me/password', request);
-    return data;
+  /** Changing the password revokes every token — store the fresh pair it returns. */
+  changePassword: async (request: ChangePasswordRequest): Promise<void> => {
+    const { data } = await apiClient.post<AuthResponse>('/api/v1/users/me/password', request);
+    await tokenStorage.setTokens(data.access_token, data.refresh_token);
   },
 
-  changeEmail: async (request: ChangeEmailRequest): Promise<MessageResponse> => {
-    const { data } = await apiClient.put<MessageResponse>('/api/v1/users/me/email', request);
+  /** Emails a confirmation link to the new address; the email changes once it's opened. */
+  requestEmailChange: async (request: EmailChangeRequest): Promise<MessageResponse> => {
+    const { data } = await apiClient.post<MessageResponse>('/api/v1/users/me/email', request);
     return data;
   },
 };

@@ -20,6 +20,19 @@ const apiClient = axios.create({
   timeout: 15000,
 });
 
+// AuthContext registers this so a dead session flips the app back to (auth).
+// Without a handler we fall back to a generic toast.
+let sessionExpiredHandler: (() => void) | null = null;
+
+export function setSessionExpiredHandler(handler: (() => void) | null) {
+  sessionExpiredHandler = handler;
+}
+
+const notifySessionExpired = () => {
+  if (sessionExpiredHandler) sessionExpiredHandler();
+  else triggerToast('Your session has expired. Please sign in again.', 'error');
+};
+
 // Track if we're currently refreshing to avoid multiple simultaneous refreshes
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -66,7 +79,7 @@ apiClient.interceptors.response.use(
       if (authEndpoint401) {
         if (originalRequest.url?.includes('/api/auth/refresh')) {
           await tokenStorage.clearTokens();
-          triggerToast('Your session has expired. Please sign in again.', 'error');
+          notifySessionExpired();
         }
         return Promise.reject(error);
       }
@@ -113,7 +126,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await tokenStorage.clearTokens();
-        triggerToast('Your session has expired. Please sign in again.', 'error');
+        notifySessionExpired();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -128,9 +141,14 @@ apiClient.interceptors.response.use(
       error.response?.status === 404 &&
       error.config?.method === 'get' &&
       /\/api\/v1\/users\/me\/avatar$/.test(error.config?.url ?? '');
-    if (error.response?.status !== 401 && !isAuthEndpoint && !isMissingAvatar) {
+    // Wrong current password (400) is shown inline by ChangePasswordForm.
+    const isWrongCurrentPassword =
+      error.response?.status === 400 &&
+      /\/api\/v1\/users\/me\/password$/.test(error.config?.url ?? '');
+    if (error.response?.status !== 401 && !isAuthEndpoint && !isMissingAvatar && !isWrongCurrentPassword) {
       const message =
         (error.response?.data as any)?.message ||
+        (error.response?.data as any)?.detail ||
         (error.response?.data as any)?.error ||
         (error.code === 'ECONNABORTED' ? 'Request timed out. Please try again.' : null) ||
         (!error.response ? 'Network error. Check your connection.' : 'Something went wrong. Please try again.');

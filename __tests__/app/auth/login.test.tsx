@@ -4,6 +4,7 @@ import LoginScreen from '../../../app/(auth)/login';
 import { AuthProvider } from '../../../src/context/AuthContext';
 import { authApi } from '../../../src/api/auth';
 import { tokenStorage } from '../../../src/storage/tokenStorage';
+import { pendingEmailStorage } from '../../../src/storage/pendingEmailStorage';
 
 jest.mock('../../../src/api/auth', () => ({
   authApi: { login: jest.fn(), register: jest.fn(), refreshToken: jest.fn(), logout: jest.fn() },
@@ -12,6 +13,11 @@ jest.mock('../../../src/storage/tokenStorage', () => ({
   tokenStorage: { getAccessToken: jest.fn(), setTokens: jest.fn(), clearTokens: jest.fn(), getRefreshToken: jest.fn() },
 }));
 
+jest.mock('../../../src/storage/pendingEmailStorage', () => ({
+  pendingEmailStorage: { get: jest.fn(), set: jest.fn(), clear: jest.fn() },
+}));
+
+const mockPendingGet = pendingEmailStorage.get as jest.Mock;
 const mockLogin = authApi.login as jest.Mock;
 const mockGetAccessToken = tokenStorage.getAccessToken as jest.Mock;
 const mockRefreshToken = authApi.refreshToken as jest.Mock;
@@ -28,6 +34,17 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockGetAccessToken.mockResolvedValue(null);
   mockRefreshToken.mockRejectedValue(new Error('no token'));
+  mockPendingGet.mockResolvedValue(null);
+});
+
+describe('LoginScreen — after an email change', () => {
+  it('prefills the new email when the session ended with a pending change', async () => {
+    mockGetAccessToken.mockResolvedValue('revoked-token');
+    mockPendingGet.mockResolvedValue({ userId: 'u1', email: 'new@test.com' });
+    renderScreen();
+    await act(async () => { jest.runAllTimers(); });
+    expect(screen.getByPlaceholderText('your@email.com').props.value).toBe('new@test.com');
+  });
 });
 
 describe('LoginScreen — rendering', () => {

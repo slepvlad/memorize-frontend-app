@@ -32,7 +32,8 @@ export default function ProfileScreen() {
   const { showToast } = useToast();
   const { nativeLanguage, studiedLanguage } = useLanguage();
 
-  const { profile, avatarUri, isLoading, refreshProfile, uploadAvatar, removeAvatar } = useProfile();
+  const { profile, avatarUri, pendingEmail, isLoading, refreshProfile, uploadAvatar, removeAvatar } =
+    useProfile();
   const [uploading, setUploading] = useState(false);
   const [openSection, setOpenSection] = useState<Section>(null);
 
@@ -134,6 +135,12 @@ export default function ProfileScreen() {
                 </View>
               </TouchableOpacity>
               {profile?.email ? <Text style={styles.email}>{profile.email}</Text> : null}
+              {pendingEmail ? (
+                <View style={styles.pendingNote} testID="pending-email">
+                  <Ionicons name="time-outline" size={16} color={colors.primary} />
+                  <Text style={styles.pendingText}>{t('pendingEmailNote', { email: pendingEmail })}</Text>
+                </View>
+              ) : null}
               {avatarUri ? (
                 <TouchableOpacity onPress={handleRemoveAvatar} disabled={uploading}>
                   <Text style={styles.removePhoto}>{t('removePhoto')}</Text>
@@ -275,6 +282,20 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text,
     marginTop: spacing.xs,
+  },
+  pendingNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+  },
+  pendingText: {
+    ...typography.bodySmall,
+    flexShrink: 1,
+    color: colors.textSecondary,
   },
   removePhoto: {
     ...typography.bodySmall,

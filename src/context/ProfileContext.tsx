@@ -1,14 +1,17 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { usersApi, UserProfile, AvatarFile } from '../api/users';
+import { pendingEmailStorage } from '../storage/pendingEmailStorage';
 import { useAuth } from './AuthContext';
 
 interface ProfileContextType {
   profile: UserProfile | null;
   avatarUri: string | null;
+  pendingEmail: string | null; // new email still waiting for its confirmation link
   isLoading: boolean;
   refreshProfile: () => Promise<void>;
   uploadAvatar: (file: AvatarFile) => Promise<void>;
   removeAvatar: () => Promise<void>;
+  requestEmailChange: (newEmail: string) => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -19,6 +22,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshProfile = useCallback(async () => {
@@ -30,6 +34,14 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       ]);
       setProfile(me);
       setAvatarUri(avatar);
+      // Drop the pending change once it's applied (or if it belongs to another account).
+      const pending = await pendingEmailStorage.get();
+      if (pending && (pending.userId !== me.id || pending.email.toLowerCase() === me.email.toLowerCase())) {
+        await pendingEmailStorage.clear();
+        setPendingEmail(null);
+      } else {
+        setPendingEmail(pending?.email ?? null);
+      }
     } catch {
       // error surfaced globally by axios interceptor (toast)
     } finally {
@@ -43,6 +55,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     } else {
       setProfile(null);
       setAvatarUri(null);
+      setPendingEmail(null);
       setIsLoading(false);
     }
   }, [isAuthenticated, refreshProfile]);
@@ -58,9 +71,27 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setAvatarUri(null);
   }, []);
 
+  const requestEmailChange = useCallback(
+    async (newEmail: string) => {
+      await usersApi.requestEmailChange({ newEmail });
+      if (profile) await pendingEmailStorage.set({ userId: profile.id, email: newEmail });
+      setPendingEmail(newEmail);
+    },
+    [profile]
+  );
+
   return (
     <ProfileContext.Provider
-      value={{ profile, avatarUri, isLoading, refreshProfile, uploadAvatar, removeAvatar }}
+      value={{
+        profile,
+        avatarUri,
+        pendingEmail,
+        isLoading,
+        refreshProfile,
+        uploadAvatar,
+        removeAvatar,
+        requestEmailChange,
+      }}
     >
       {children}
     </ProfileContext.Provider>

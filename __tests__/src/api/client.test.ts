@@ -1,6 +1,6 @@
 import MockAdapter from 'axios-mock-adapter';
 import axios from 'axios';
-import apiClient from '../../../src/api/client';
+import apiClient, { setSessionExpiredHandler } from '../../../src/api/client';
 import { tokenStorage } from '../../../src/storage/tokenStorage';
 import { triggerToast } from '../../../src/context/ToastContext';
 
@@ -114,6 +114,20 @@ describe('response interceptor — 401 handling', () => {
     );
   });
 
+  it('calls the registered session-expired handler instead of the default toast', async () => {
+    const handler = jest.fn();
+    setSessionExpiredHandler(handler);
+    mockGetAccessToken.mockResolvedValue('old-token');
+    mockGetRefreshToken.mockResolvedValue(null);
+    mock.onGet('/protected').reply(401);
+
+    await expect(apiClient.get('/protected')).rejects.toBeDefined();
+    setSessionExpiredHandler(null);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(mockTriggerToast).not.toHaveBeenCalled();
+  });
+
   it('clears tokens when no refresh token is available', async () => {
     mockGetAccessToken.mockResolvedValue('old-token');
     mockGetRefreshToken.mockResolvedValue(null);
@@ -212,5 +226,26 @@ describe('response interceptor — non-401 errors', () => {
 
     await expect(apiClient.get('/fail')).rejects.toBeDefined();
     expect(mockTriggerToast).toHaveBeenCalledWith('Bad request details', 'error');
+  });
+
+  it('uses ProblemDetail detail as message', async () => {
+    mock.onGet('/fail').reply(409, { title: 'Conflict', detail: 'Email already in use' });
+
+    await expect(apiClient.get('/fail')).rejects.toBeDefined();
+    expect(mockTriggerToast).toHaveBeenCalledWith('Email already in use', 'error');
+  });
+
+  it('does NOT show toast for wrong current password (400 on password change)', async () => {
+    mock.onPost('/api/v1/users/me/password').reply(400, { detail: 'Current password is incorrect' });
+
+    await expect(apiClient.post('/api/v1/users/me/password', {})).rejects.toBeDefined();
+    expect(mockTriggerToast).not.toHaveBeenCalled();
+  });
+
+  it('still shows toast for other password change errors', async () => {
+    mock.onPost('/api/v1/users/me/password').reply(500, { message: 'Boom' });
+
+    await expect(apiClient.post('/api/v1/users/me/password', {})).rejects.toBeDefined();
+    expect(mockTriggerToast).toHaveBeenCalledWith('Boom', 'error');
   });
 });

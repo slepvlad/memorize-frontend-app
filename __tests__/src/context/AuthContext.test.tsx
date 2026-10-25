@@ -3,6 +3,9 @@ import { renderHook, act } from '@testing-library/react-native';
 import { AuthProvider, useAuth } from '../../../src/context/AuthContext';
 import { authApi } from '../../../src/api/auth';
 import { tokenStorage } from '../../../src/storage/tokenStorage';
+import { setSessionExpiredHandler } from '../../../src/api/client';
+import { pendingEmailStorage } from '../../../src/storage/pendingEmailStorage';
+import { triggerToast } from '../../../src/context/ToastContext';
 
 jest.mock('../../../src/api/auth', () => ({
   authApi: {
@@ -22,6 +25,21 @@ jest.mock('../../../src/storage/tokenStorage', () => ({
   },
 }));
 
+jest.mock('../../../src/api/client', () => ({
+  setSessionExpiredHandler: jest.fn(),
+}));
+
+jest.mock('../../../src/storage/pendingEmailStorage', () => ({
+  pendingEmailStorage: { get: jest.fn(), set: jest.fn(), clear: jest.fn() },
+}));
+
+jest.mock('../../../src/context/ToastContext', () => ({
+  triggerToast: jest.fn(),
+}));
+
+const mockSetSessionExpiredHandler = setSessionExpiredHandler as jest.Mock;
+const mockPendingGet = pendingEmailStorage.get as jest.Mock;
+const mockTriggerToast = triggerToast as jest.Mock;
 const mockLogin = authApi.login as jest.Mock;
 const mockRegister = authApi.register as jest.Mock;
 const mockRefreshToken = authApi.refreshToken as jest.Mock;
@@ -36,6 +54,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetAccessToken.mockResolvedValue(null);
+  mockPendingGet.mockResolvedValue(null);
 });
 
 // ─── Initial state ───────────────────────────────────────────────────────────
@@ -86,6 +105,66 @@ describe('checkAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.isInitializing).toBe(false);
     expect(mockClearTokens).toHaveBeenCalled();
+    expect(mockTriggerToast).not.toHaveBeenCalled();
+    expect(result.current.suggestedEmail).toBeNull();
+  });
+
+  it('suggests the new email when boot refresh fails with a pending email change', async () => {
+    mockGetAccessToken.mockResolvedValue('revoked-token');
+    mockRefreshToken.mockRejectedValue(new Error('revoked'));
+    mockPendingGet.mockResolvedValue({ userId: 'u1', email: 'new@test.com' });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => { jest.runAllTimers(); });
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.suggestedEmail).toBe('new@test.com');
+    expect(mockTriggerToast).toHaveBeenCalledWith(
+      'Your email was changed. Please sign in with your new email.',
+      'info'
+    );
+  });
+});
+
+// ─── session expired (interceptor) ───────────────────────────────────────────
+
+describe('session expired handler', () => {
+  const renderAuthenticated = async () => {
+    mockGetAccessToken.mockResolvedValue('token');
+    mockRefreshToken.mockResolvedValue({ access_token: 'a', refresh_token: 'r' });
+    const hook = renderHook(() => useAuth(), { wrapper });
+    await act(async () => { jest.runAllTimers(); });
+    expect(hook.result.current.isAuthenticated).toBe(true);
+    const handler = mockSetSessionExpiredHandler.mock.calls.at(-1)[0] as () => void;
+    return { ...hook, handler };
+  };
+
+  it('signs out with a generic toast when nothing is pending', async () => {
+    const { result, handler } = await renderAuthenticated();
+    await act(async () => { handler(); });
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.suggestedEmail).toBeNull();
+    expect(mockTriggerToast).toHaveBeenCalledWith('Your session has expired. Please sign in again.', 'error');
+  });
+
+  it('signs out and suggests the new email when a change is pending', async () => {
+    const { result, handler } = await renderAuthenticated();
+    mockPendingGet.mockResolvedValue({ userId: 'u1', email: 'new@test.com' });
+    await act(async () => { handler(); });
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.suggestedEmail).toBe('new@test.com');
+    expect(mockTriggerToast).toHaveBeenCalledWith(
+      'Your email was changed. Please sign in with your new email.',
+      'info'
+    );
+  });
+
+  it('unregisters the handler on unmount', async () => {
+    const { unmount } = await renderAuthenticated();
+    unmount();
+    expect(mockSetSessionExpiredHandler).toHaveBeenLastCalledWith(null);
   });
 });
 

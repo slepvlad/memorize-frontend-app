@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
+import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -40,8 +41,11 @@ export function ChangePasswordForm({ onDone }: Props) {
       await usersApi.changePassword({ currentPassword, newPassword });
       showToast(t('passwordChanged'), 'success');
       onDone();
-    } catch {
-      // error surfaced globally by axios interceptor (toast)
+    } catch (error) {
+      // 400 = wrong current password (or same as new); other errors are toasted by the interceptor.
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        setErrors({ current: t('wrongCurrentPassword') });
+      }
     } finally {
       setSaving(false);
     }

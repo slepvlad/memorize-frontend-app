@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,9 +22,14 @@ import { colors, spacing } from '../../src/theme';
 export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError, suggestedEmail } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(suggestedEmail ?? '');
+
+  // After a confirmed email change the session dies — prefill the new address.
+  useEffect(() => {
+    if (suggestedEmail) setEmail(suggestedEmail);
+  }, [suggestedEmail]);
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
