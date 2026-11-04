@@ -137,14 +137,15 @@ const ru = {
 
   // Progress
   yourProgress: 'Ваш прогресс',
-  wordsLearned: 'Слов изучено',
-  dayStreak: 'Дней подряд',
-  quizAccuracy: 'Точность теста',
-  xpEarned: 'XP заработано',
-  thisWeek: 'На этой неделе',
+  totalPhrases: 'Всего фраз',
+  dueNow: 'К повторению',
+  dueToday: 'До конца дня',
+  averageEasiness: 'Ср. лёгкость',
   masteryBreakdown: 'Уровни владения',
   mastered: 'Освоено',
   learning: 'Учится',
+  statsLoadError: 'Что-то пошло не так. Мы уже это исправляем — попробуйте позже.',
+  tryAgain: 'Попробовать снова',
 
   // Profile
   profileTitle: 'Профиль',

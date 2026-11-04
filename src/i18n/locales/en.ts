@@ -137,14 +137,15 @@ const en = {
 
   // Progress
   yourProgress: 'Your progress',
-  wordsLearned: 'Words learned',
-  dayStreak: 'Day streak',
-  quizAccuracy: 'Quiz accuracy',
-  xpEarned: 'XP earned',
-  thisWeek: 'This week',
+  totalPhrases: 'Total phrases',
+  dueNow: 'Due now',
+  dueToday: 'Due today',
+  averageEasiness: 'Avg. easiness',
   masteryBreakdown: 'Mastery breakdown',
   mastered: 'Mastered',
   learning: 'Learning',
+  statsLoadError: "Something went wrong. We're already fixing it — please try again later.",
+  tryAgain: 'Try again',
 
   // Profile
   profileTitle: 'Profile',

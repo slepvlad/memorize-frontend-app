@@ -98,3 +98,22 @@ src/                          # Shared logic
 | `/api/auth/register`  | POST   | Create account          |
 | `/api/auth/login`     | POST   | Sign in                 |
 | `/api/auth/refresh`   | POST   | Refresh expired token   |
+
+
+### Install on your ios device
+
+
+```bash
+npx expo install expo-localization
+npx expo prebuild --clean -p ios
+cd ios
+pod install
+cd ..
+```
+
+#### Then in Xcode:
+
+* Product → Clean Build Folder (Cmd + Shift + K)
+* Confirm scheme is still Release (Cmd + < → Run → Release)
+* Confirm your Team is set in Signing & Capabilities
+* ▶ Run

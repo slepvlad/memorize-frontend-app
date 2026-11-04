@@ -1,103 +1,134 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { statsApi, StatsSummary } from '../../src/api/stats';
+import { Button } from '../../src/components/ui/Button';
 import { colors, spacing, radius } from '../../src/theme';
 
-const STAT_KEYS = ['wordsLearned', 'dayStreak', 'quizAccuracy', 'xpEarned'] as const;
-const STAT_VALUES = ['248', '12', '86%', '1,240'];
 const STAT_COLORS = [colors.success, colors.warning, colors.info, colors.purple];
-
-const weekData = [
-  { day: 'Mon', value: 65 },
-  { day: 'Tue', value: 80 },
-  { day: 'Wed', value: 45 },
-  { day: 'Thu', value: 90 },
-  { day: 'Fri', value: 70 },
-  { day: 'Sat', value: 30 },
-  { day: 'Sun', value: 50 },
-];
-
-const MASTERY_KEYS = ['mastered', 'learning', 'wordNew'] as const;
-const MASTERY_PERCENTS = [45, 35, 20];
 const MASTERY_COLORS = [colors.primary, colors.warning, colors.borderHover];
+
+function percentOf(part: number, total: number): number {
+  return total > 0 ? Math.round((part / total) * 100) : 0;
+}
 
 export default function ProgressScreen() {
   const { t } = useTranslation();
-  const todayIndex = 3; // Thursday
+  const [summary, setSummary] = useState<StatsSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const loadSummary = useCallback(async () => {
+    try {
+      setSummary(await statsApi.getSummary());
+      setFailed(false);
+    } catch {
+      // The interceptor skips the toast for this endpoint — show the inline error instead.
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Refetch on every focus so numbers reflect reviews done on other tabs.
+  useFocusEffect(
+    useCallback(() => {
+      void loadSummary();
+    }, [loadSummary])
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadSummary();
+    setRefreshing(false);
+  }, [loadSummary]);
+
+  const handleRetry = useCallback(() => {
+    setLoading(true);
+    void loadSummary();
+  }, [loadSummary]);
+
+  if (loading && !summary) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const stats = summary
+    ? [
+        { key: 'totalPhrases', value: String(summary.totalPhrases) },
+        { key: 'dueNow', value: String(summary.dueNow) },
+        { key: 'dueToday', value: String(summary.dueToday) },
+        { key: 'averageEasiness', value: summary.averageEasiness.toFixed(2) },
+      ]
+    : [];
+
+  const mastery = summary
+    ? [
+        { key: 'mastered', count: summary.maturePhrases },
+        { key: 'learning', count: summary.learningPhrases },
+        { key: 'wordNew', count: summary.newPhrases },
+      ]
+    : [];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+        }
       >
         <Text style={styles.title}>{t('yourProgress')}</Text>
 
-        {/* Stat Grid */}
-        <View style={styles.statGrid}>
-          {STAT_KEYS.map((key, i) => (
-            <View key={i} style={styles.statCard}>
-              <Text style={[styles.statValue, { color: STAT_COLORS[i] }]}>
-                {STAT_VALUES[i]}
-              </Text>
-              <Text style={styles.statLabel}>{t(key)}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Weekly Chart */}
-        <Text style={styles.sectionTitle}>{t('thisWeek')}</Text>
-        <View style={styles.chartCard}>
-          <View style={styles.chartBars}>
-            {weekData.map((d, i) => (
-              <View key={i} style={styles.barCol}>
-                <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-                  <View
-                    style={[
-                      styles.bar,
-                      {
-                        height: `${d.value}%`,
-                        backgroundColor:
-                          i === todayIndex ? colors.primary : colors.border,
-                      },
-                    ]}
-                  />
+        {failed ? (
+          <View style={styles.errorCard}>
+            <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
+            <Text style={styles.errorText}>{t('statsLoadError')}</Text>
+            <Button title={t('tryAgain')} onPress={handleRetry} variant="secondary" loading={loading} />
+          </View>
+        ) : (
+          <>
+            {/* Stat Grid */}
+            <View style={styles.statGrid}>
+              {stats.map((stat, i) => (
+                <View key={stat.key} style={styles.statCard}>
+                  <Text style={[styles.statValue, { color: STAT_COLORS[i] }]}>{stat.value}</Text>
+                  <Text style={styles.statLabel}>{t(stat.key)}</Text>
                 </View>
-                <Text
-                  style={[
-                    styles.barLabel,
-                    i === todayIndex && {
-                      color: colors.primary,
-                      fontWeight: '600',
-                    },
-                  ]}
-                >
-                  {d.day}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Mastery */}
-        <Text style={styles.sectionTitle}>{t('masteryBreakdown')}</Text>
-        {MASTERY_KEYS.map((key, i) => (
-          <View key={i} style={styles.masteryRow}>
-            <Text style={styles.masteryLabel}>{t(key)}</Text>
-            <View style={styles.masteryTrack}>
-              <View
-                style={[
-                  styles.masteryFill,
-                  {
-                    width: `${MASTERY_PERCENTS[i]}%`,
-                    backgroundColor: MASTERY_COLORS[i],
-                  },
-                ]}
-              />
+              ))}
             </View>
-            <Text style={styles.masteryPercent}>{MASTERY_PERCENTS[i]}%</Text>
-          </View>
-        ))}
+
+            {/* Mastery */}
+            <Text style={styles.sectionTitle}>{t('masteryBreakdown')}</Text>
+            {mastery.map((item, i) => {
+              const percent = percentOf(item.count, summary!.totalPhrases);
+              return (
+                <View key={item.key} style={styles.masteryRow}>
+                  <Text style={styles.masteryLabel}>{t(item.key)}</Text>
+                  <View style={styles.masteryTrack}>
+                    <View
+                      style={[
+                        styles.masteryFill,
+                        { width: `${percent}%`, backgroundColor: MASTERY_COLORS[i] },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.masteryPercent}>{percent}%</Text>
+                </View>
+              );
+            })}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -107,6 +138,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     paddingHorizontal: spacing.xxl,
@@ -149,32 +185,18 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.md,
   },
-  chartCard: {
+  errorCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
-    padding: 16,
-    marginBottom: spacing.xxl,
-  },
-  chartBars: {
-    flexDirection: 'row',
-    height: 120,
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  barCol: {
-    flex: 1,
-    height: '100%',
+    padding: spacing.xxl,
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.md,
   },
-  bar: {
-    width: 24,
-    borderRadius: 6,
-    minHeight: 8,
-  },
-  barLabel: {
-    fontSize: 11,
-    color: colors.textTertiary,
+  errorText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   masteryRow: {
     flexDirection: 'row',

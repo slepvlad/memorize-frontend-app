@@ -145,7 +145,15 @@ apiClient.interceptors.response.use(
     const isWrongCurrentPassword =
       error.response?.status === 400 &&
       /\/api\/v1\/users\/me\/password$/.test(error.config?.url ?? '');
-    if (error.response?.status !== 401 && !isAuthEndpoint && !isMissingAvatar && !isWrongCurrentPassword) {
+    // The Progress screen shows its own inline error state for stats failures.
+    const isStatsSummary = /\/api\/v1\/users\/me\/stats\/summary$/.test(error.config?.url ?? '');
+    if (
+      error.response?.status !== 401 &&
+      !isAuthEndpoint &&
+      !isMissingAvatar &&
+      !isWrongCurrentPassword &&
+      !isStatsSummary
+    ) {
       const message =
         (error.response?.data as any)?.message ||
         (error.response?.data as any)?.detail ||
