@@ -119,8 +119,7 @@ const en = {
   enterText: 'Enter text…',
   examples: 'Examples',
   enterToTranslate: 'Enter a word or phrase to see its translation',
-  comingSoon: 'Coming soon',
-  audioComingSoon: 'Audio playback will be available in a future update.',
+  audioUnavailable: 'Couldn’t play audio. Please try again.',
 
   // Vocabulary
   vocabularyTitle: 'Vocabulary',

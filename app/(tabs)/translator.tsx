@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseLookupResponse, LANGUAGE_TO_API } from '../../src/api/phrases';
+import { useAudioPlayback } from '../../src/audio/useAudioPlayback';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
+import { SpeakerButton } from '../../src/components/ui/SpeakerButton';
 import { colors, spacing, radius } from '../../src/theme';
 
 const getLangInfo = (code: string | null) =>
@@ -30,10 +31,16 @@ export default function TranslatorScreen() {
   const [editedTranslation, setEditedTranslation] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Clips synthesized in this session, so Save can attach them to the phrase.
+  const [generatedAudio, setGeneratedAudio] = useState<{
+    original: string | null;
+    translated: string | null;
+  }>({ original: null, translated: null });
 
   const router = useRouter();
   const { t } = useTranslation();
   const { studiedLanguage, nativeLanguage, isConfigured } = useLanguage();
+  const audio = useAudioPlayback();
 
   const tabBarHeight = useBottomTabBarHeight();
   const keyboard = useAnimatedKeyboard();
@@ -50,27 +57,28 @@ export default function TranslatorScreen() {
 
   const canLookup = query.trim().length > 0 && !!sourceApiLang && !!targetApiLang;
 
-  const handleSwap = () => {
-    setSwapped(s => !s);
-    setQuery('');
+  const resetResult = () => {
     setResult(null);
     setEditedTranslation('');
     setSaved(false);
+    setGeneratedAudio({ original: null, translated: null });
+  };
+
+  const handleSwap = () => {
+    setSwapped(s => !s);
+    setQuery('');
+    resetResult();
   };
 
   const handleClear = () => {
     setQuery('');
-    setResult(null);
-    setEditedTranslation('');
-    setSaved(false);
+    resetResult();
   };
 
   const handleLookup = async () => {
     if (!canLookup) return;
     setLoading(true);
-    setResult(null);
-    setEditedTranslation('');
-    setSaved(false);
+    resetResult();
     try {
       const data = await phrasesApi.lookup(query.trim(), sourceApiLang!, targetApiLang!);
       setResult(data);
@@ -82,8 +90,30 @@ export default function TranslatorScreen() {
     }
   };
 
-  const handlePlayAudio = () => {
-    Alert.alert(t('comingSoon'), t('audioComingSoon'));
+  // Speakers read the lookup result rather than the raw query, so the clip they
+  // synthesize always matches the text Save persists.
+  const handlePlayOriginal = async () => {
+    if (!result) return;
+    const audioId = await audio.play('original', {
+      audioId: result.originalAudioId ?? generatedAudio.original,
+      text: result.originalWord,
+      language: result.originalLanguage,
+    });
+    if (audioId && !result.originalAudioId) {
+      setGeneratedAudio(prev => ({ ...prev, original: audioId }));
+    }
+  };
+
+  const handlePlayTranslation = async () => {
+    if (!result) return;
+    const audioId = await audio.play('translated', {
+      audioId: result.translatedAudioId ?? generatedAudio.translated,
+      text: result.translatedWord,
+      language: result.translatedLanguage,
+    });
+    if (audioId && !result.translatedAudioId) {
+      setGeneratedAudio(prev => ({ ...prev, translated: audioId }));
+    }
   };
 
   const handleSave = async () => {
@@ -95,8 +125,8 @@ export default function TranslatorScreen() {
         originalLanguage: result.originalLanguage,
         translatedWord: editedTranslation,
         translatedLanguage: result.translatedLanguage,
-        originalAudioId: result.originalAudioId,
-        translatedAudioId: result.translatedAudioId,
+        originalAudioId: result.originalAudioId ?? generatedAudio.original,
+        translatedAudioId: result.translatedAudioId ?? generatedAudio.translated,
         examples: result.examples,
       });
       setSaved(true);
@@ -186,13 +216,13 @@ export default function TranslatorScreen() {
           />
           {result && (
             <View style={styles.inputFooter}>
-              <TouchableOpacity
-                onPress={handlePlayAudio}
-                accessibilityLabel="Play original audio"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="volume-high-outline" size={24} color={colors.textTertiary} />
-              </TouchableOpacity>
+              <SpeakerButton
+                onPress={handlePlayOriginal}
+                label="Play original audio"
+                color={colors.textTertiary}
+                loading={audio.loadingKey === 'original'}
+                playing={audio.playingKey === 'original'}
+              />
             </View>
           )}
         </View>
@@ -223,14 +253,13 @@ export default function TranslatorScreen() {
               accessibilityLabel="Translated phrase"
             />
             <View style={styles.resultActions}>
-              <TouchableOpacity
-                style={styles.iconAction}
-                onPress={handlePlayAudio}
-                accessibilityLabel="Play audio"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="volume-high-outline" size={24} color={colors.primary} />
-              </TouchableOpacity>
+              <SpeakerButton
+                onPress={handlePlayTranslation}
+                label="Play audio"
+                color={colors.primary}
+                loading={audio.loadingKey === 'translated'}
+                playing={audio.playingKey === 'translated'}
+              />
             </View>
           </View>
         )}
@@ -402,9 +431,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xl,
     marginTop: spacing.lg,
-  },
-  iconAction: {
-    padding: spacing.xs,
   },
 
   // Examples

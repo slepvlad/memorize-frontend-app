@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
+import { useAudioPlayback } from '../../src/audio/useAudioPlayback';
+import { SpeakerButton } from '../../src/components/ui/SpeakerButton';
 import { colors, spacing, radius } from '../../src/theme';
 
 function getDuePhrases(phrases: PhraseResponse[]): PhraseResponse[] {
@@ -21,6 +23,7 @@ export default function LearnScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [finished, setFinished] = useState(false);
   const { t } = useTranslation();
+  const audio = useAudioPlayback();
 
   const loadPhrases = useCallback(async () => {
     setLoading(true);
@@ -54,6 +57,7 @@ export default function LearnScreen() {
 
   const handleNext = () => {
     if (phrases.length === 0) return;
+    audio.stop();
     setIsFlipped(false);
     if (currentIndex < phrases.length - 1) {
       setCurrentIndex((prev) => prev + 1);
@@ -144,6 +148,10 @@ export default function LearnScreen() {
   }
 
   const phrase = phrases[currentIndex];
+  // Per-phrase keys, so a clip still running from the previous card never
+  // highlights the next card's speaker.
+  const originalKey = `original-${phrase.id}`;
+  const translatedKey = `translated-${phrase.id}`;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -181,6 +189,19 @@ export default function LearnScreen() {
                 <Text style={[styles.pillText, { color: colors.info }]}>{t('phrase')}</Text>
               </View>
               <Text style={styles.wordText}>{phrase.originalWord}</Text>
+              <SpeakerButton
+                onPress={() =>
+                  void audio.play(originalKey, {
+                    audioId: phrase.originalAudioId,
+                    text: phrase.originalWord,
+                    language: phrase.originalLanguage,
+                  })
+                }
+                label={`Play audio for ${phrase.originalWord}`}
+                color={colors.primary}
+                loading={audio.loadingKey === originalKey}
+                playing={audio.playingKey === originalKey}
+              />
               <Text style={styles.flipHint}>{t('tapToReveal')}</Text>
             </View>
           ) : (
@@ -189,6 +210,22 @@ export default function LearnScreen() {
                 <Text style={[styles.pillText, { color: colors.success }]}>{t('translation')}</Text>
               </View>
               <Text style={styles.definition}>{phrase.translatedWord}</Text>
+              {phrase.translatedWord ? (
+                <SpeakerButton
+                  onPress={() =>
+                    void audio.play(translatedKey, {
+                      audioId: phrase.translatedAudioId,
+                      text: phrase.translatedWord,
+                      language: phrase.translatedLanguage,
+                    })
+                  }
+                  label={`Play audio for ${phrase.translatedWord}`}
+                  size={20}
+                  color={colors.primary}
+                  loading={audio.loadingKey === translatedKey}
+                  playing={audio.playingKey === translatedKey}
+                />
+              ) : null}
             </View>
           )}
         </TouchableOpacity>

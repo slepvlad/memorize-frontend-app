@@ -17,7 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseResponse, PhraseUpdateRequest, LANGUAGE_TO_API } from '../../src/api/phrases';
+import { useAudioPlayback } from '../../src/audio/useAudioPlayback';
 import { useLanguage } from '../../src/context/LanguageContext';
+import { SpeakerButton } from '../../src/components/ui/SpeakerButton';
 import { colors, spacing, radius } from '../../src/theme';
 
 const PAGE_SIZE = 20;
@@ -42,6 +44,7 @@ export default function VocabularyScreen() {
 
   const { t } = useTranslation();
   const { nativeLanguage, studiedLanguage } = useLanguage();
+  const audio = useAudioPlayback();
 
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     try {
@@ -189,54 +192,71 @@ export default function VocabularyScreen() {
     );
   };
 
-  const renderItem = ({ item }: { item: PhraseResponse }) => (
-    <View style={styles.wordRow}>
-      <View style={styles.wordInfo}>
-        <Text style={styles.wordTerm}>{item.originalWord}</Text>
-        {item.translatedWord ? (
-          <Text style={styles.wordDefinition} numberOfLines={1}>
-            {item.translatedWord}
-          </Text>
-        ) : null}
-      </View>
-      <View style={styles.wordActions}>
-        <View
-          style={[
-            styles.badge,
-            {
-              backgroundColor:
-                item.repetitions > 0 ? colors.successLight : colors.warningLight,
-            },
-          ]}
-        >
-          <Text
+  const renderItem = ({ item }: { item: PhraseResponse }) => {
+    const speakerKey = `phrase-${item.id}`;
+    return (
+      <View style={styles.wordRow}>
+        <View style={styles.wordInfo}>
+          <Text style={styles.wordTerm}>{item.originalWord}</Text>
+          {item.translatedWord ? (
+            <Text style={styles.wordDefinition} numberOfLines={1}>
+              {item.translatedWord}
+            </Text>
+          ) : null}
+        </View>
+        <View style={styles.wordActions}>
+          <View
             style={[
-              styles.badgeText,
-              { color: item.repetitions > 0 ? colors.success : colors.warning },
+              styles.badge,
+              {
+                backgroundColor:
+                  item.repetitions > 0 ? colors.successLight : colors.warningLight,
+              },
             ]}
           >
-            {item.repetitions > 0 ? t('reviewed') : t('wordNew')}
-          </Text>
+            <Text
+              style={[
+                styles.badgeText,
+                { color: item.repetitions > 0 ? colors.success : colors.warning },
+              ]}
+            >
+              {item.repetitions > 0 ? t('reviewed') : t('wordNew')}
+            </Text>
+          </View>
+          <SpeakerButton
+            onPress={() =>
+              void audio.play(speakerKey, {
+                audioId: item.originalAudioId,
+                text: item.originalWord,
+                language: item.originalLanguage,
+              })
+            }
+            label={`Play audio for ${item.originalWord}`}
+            size={18}
+            color={colors.textSecondary}
+            loading={audio.loadingKey === speakerKey}
+            playing={audio.playingKey === speakerKey}
+          />
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => openEditModal(item)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={`Edit ${item.originalWord}`}
+          >
+            <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => handleDeletePress(item)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={`Delete ${item.originalWord}`}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.danger} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => openEditModal(item)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityLabel={`Edit ${item.originalWord}`}
-        >
-          <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => handleDeletePress(item)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityLabel={`Delete ${item.originalWord}`}
-        >
-          <Ionicons name="trash-outline" size={18} color={colors.danger} />
-        </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>

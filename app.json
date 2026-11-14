@@ -25,7 +25,8 @@
         {
           "photosPermission": "Allow Recallingo to access your photos to set a profile picture."
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 import apiClient from './client';
+import { toDataUri } from './dataUri';
 import type { AuthResponse } from './auth';
 import { tokenStorage } from '../storage/tokenStorage';
 
@@ -26,17 +27,6 @@ export interface AvatarFile {
   uri: string;
   mimeType?: string | null;
   fileName?: string | null;
-}
-
-// The avatar endpoint requires the JWT, so <Image> can't load it by URL —
-// fetch the bytes through apiClient and hand <Image> a data URI instead.
-function toDataUri(buffer: ArrayBuffer, contentType: string): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return `data:${contentType};base64,${btoa(binary)}`;
 }
 
 export const usersApi = {

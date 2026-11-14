@@ -119,8 +119,7 @@ const ru = {
   enterText: 'Введите текст…',
   examples: 'Примеры',
   enterToTranslate: 'Введите слово или фразу для перевода',
-  comingSoon: 'Скоро',
-  audioComingSoon: 'Воспроизведение аудио появится в следующем обновлении.',
+  audioUnavailable: 'Не удалось воспроизвести аудио. Попробуйте ещё раз.',
 
   // Vocabulary
   vocabularyTitle: 'Словарь',

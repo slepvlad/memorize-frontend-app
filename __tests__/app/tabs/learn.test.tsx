@@ -2,14 +2,23 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import LearnScreen from '../../../app/(tabs)/learn';
 import { phrasesApi } from '../../../src/api/phrases';
+import { audioApi } from '../../../src/api/audio';
+import { clearAudioClipCache } from '../../../src/audio/useAudioPlayback';
 
 jest.mock('../../../src/api/phrases', () => ({
   phrasesApi: { getAll: jest.fn(), review: jest.fn() },
 }));
 
+jest.mock('../../../src/api/audio', () => ({
+  audioApi: { generate: jest.fn(), getClip: jest.fn() },
+}));
+
 const mockGetAll = phrasesApi.getAll as jest.Mock;
 const mockReview = phrasesApi.review as jest.Mock;
+const mockGenerate = audioApi.generate as jest.Mock;
+const mockGetClip = audioApi.getClip as jest.Mock;
 const { _mockRouter } = require('expo-router');
+const { _mockPlayer } = require('expo-audio');
 
 const makePhrase = (
   id: string,
@@ -22,8 +31,8 @@ const makePhrase = (
   translatedWord,
   originalLanguage: 'ENGLISH' as const,
   translatedLanguage: 'RUSSIAN' as const,
-  originalAudioId: null,
-  translatedAudioId: null,
+  originalAudioId: null as string | null,
+  translatedAudioId: null as string | null,
   examples: [],
   interval: 1,
   repetitions: 0,
@@ -54,7 +63,10 @@ const makePage = (phrases = mockPhrases) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  clearAudioClipCache();
   mockGetAll.mockResolvedValue(makePage());
+  mockGenerate.mockResolvedValue({ audio_id: 'gen-1' });
+  mockGetClip.mockResolvedValue('data:audio/wav;base64,AAA');
 });
 
 describe('LearnScreen — loading state', () => {
@@ -355,5 +367,80 @@ describe('LearnScreen — session complete', () => {
     await act(async () => { fireEvent.press(screen.getByText('Study again')); });
     expect(mockGetAll.mock.calls.length).toBeGreaterThanOrEqual(2);
     await waitFor(() => expect(screen.getByText('Hello world')).toBeTruthy());
+  });
+});
+
+describe('LearnScreen — audio playback', () => {
+  it('synthesizes and plays the phrase from the front speaker', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Hello world'));
+    });
+
+    expect(mockGenerate).toHaveBeenCalledWith('Hello world', 'ENGLISH');
+    expect(mockGetClip).toHaveBeenCalledWith('gen-1');
+    expect(_mockPlayer.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('plays the stored clip without synthesizing', async () => {
+    mockGetAll.mockResolvedValue(
+      makePage([{ ...makePhrase('p1', 'Hello world', 'Привет мир'), originalAudioId: 'clip-1' }])
+    );
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Hello world'));
+    });
+
+    expect(mockGenerate).not.toHaveBeenCalled();
+    expect(mockGetClip).toHaveBeenCalledWith('clip-1');
+  });
+
+  it('plays the translation from the back speaker', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Hello world')); // flip
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Привет мир'));
+    });
+
+    expect(mockGenerate).toHaveBeenCalledWith('Привет мир', 'RUSSIAN');
+  });
+
+  it('hides the back speaker when the phrase has no translation', async () => {
+    mockGetAll.mockResolvedValue(makePage([makePhrase('p1', 'Hello world', '')]));
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    fireEvent.press(screen.getByText('Hello world')); // flip
+
+    expect(screen.queryAllByLabelText(/^Play audio for /)).toHaveLength(0);
+  });
+
+  it('does not flip the card when the speaker is pressed', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Hello world'));
+    });
+
+    expect(screen.getByText('Tap to reveal translation')).toBeTruthy();
+  });
+
+  it('stops playback when advancing to the next card', async () => {
+    render(<LearnScreen />);
+    await waitFor(() => screen.getByText('Hello world'));
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Hello world'));
+    });
+
+    fireEvent.press(screen.getByText('Easy'));
+
+    expect(_mockPlayer.pause).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Good morning')).toBeTruthy();
   });
 });

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Alert } from 'react-native';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import TranslatorScreen from '../../../app/(tabs)/translator';
 import { phrasesApi } from '../../../src/api/phrases';
+import { audioApi } from '../../../src/api/audio';
+import { clearAudioClipCache } from '../../../src/audio/useAudioPlayback';
 import { useLanguage } from '../../../src/context/LanguageContext';
 import { _mockRouter } from 'expo-router';
 
@@ -13,6 +14,10 @@ jest.mock('expo-router/js-tabs', () => ({
 jest.mock('../../../src/api/phrases', () => ({
   phrasesApi: { lookup: jest.fn(), save: jest.fn() },
   LANGUAGE_TO_API: { en: 'ENGLISH', ru: 'RUSSIAN' },
+}));
+
+jest.mock('../../../src/api/audio', () => ({
+  audioApi: { generate: jest.fn(), getClip: jest.fn() },
 }));
 
 jest.mock('../../../src/context/LanguageContext', () => ({
@@ -26,14 +31,18 @@ jest.mock('../../../src/context/LanguageContext', () => ({
 const mockLookup = phrasesApi.lookup as jest.Mock;
 const mockSave = phrasesApi.save as jest.Mock;
 const mockUseLanguage = useLanguage as jest.Mock;
+const mockGenerate = audioApi.generate as jest.Mock;
+const mockGetClip = audioApi.getClip as jest.Mock;
+// Mock-only export, so require() keeps it out of the expo-audio types.
+const { _mockPlayer } = require('expo-audio');
 
 const fakeResult = {
   originalWord: 'ephemeral',
   originalLanguage: 'ENGLISH' as const,
   translatedWord: 'эфемерный',
   translatedLanguage: 'RUSSIAN' as const,
-  originalAudioId: 'c1f2e3d4-0000-0000-0000-000000000001',
-  translatedAudioId: 'c1f2e3d4-0000-0000-0000-000000000002',
+  originalAudioId: 'c1f2e3d4-0000-0000-0000-000000000001' as string | null,
+  translatedAudioId: 'c1f2e3d4-0000-0000-0000-000000000002' as string | null,
   examples: [
     { original: 'The ephemeral beauty of a sunset.', translation: 'Эфемерная красота заката.' },
     { original: 'Fame can be ephemeral.', translation: 'Слава может быть мимолётной.' },
@@ -51,10 +60,12 @@ const configuredLanguage = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  clearAudioClipCache();
   mockUseLanguage.mockReturnValue(configuredLanguage);
   mockLookup.mockResolvedValue(fakeResult);
   mockSave.mockResolvedValue({ id: 'saved-phrase-id' });
-  jest.spyOn(Alert, 'alert');
+  mockGenerate.mockResolvedValue({ audio_id: 'generated-id' });
+  mockGetClip.mockResolvedValue('data:audio/wav;base64,AAA');
 });
 
 afterEach(() => {
@@ -276,7 +287,7 @@ describe('TranslatorScreen — lookup flow', () => {
 
 });
 
-describe('TranslatorScreen — stub actions', () => {
+describe('TranslatorScreen — action buttons', () => {
   const renderWithResult = async () => {
     render(<TranslatorScreen />);
     fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
@@ -309,18 +320,147 @@ describe('TranslatorScreen — stub actions', () => {
     expect(screen.queryByLabelText('Save for study')).toBeNull();
   });
 
-  it('play original audio button shows coming-soon alert', async () => {
+});
+
+describe('TranslatorScreen — audio playback', () => {
+  const noStoredClips = { ...fakeResult, originalAudioId: null, translatedAudioId: null };
+
+  const renderWithResult = async (lookupResult = fakeResult) => {
+    mockLookup.mockResolvedValueOnce(lookupResult);
+    render(<TranslatorScreen />);
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'ephemeral');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() =>
+      expect(screen.getByDisplayValue(lookupResult.translatedWord)).toBeTruthy()
+    );
+  };
+
+  it('plays the clip the lookup returned, without synthesizing', async () => {
     await renderWithResult();
-    fireEvent.press(screen.getByLabelText('Play original audio'));
-    expect(Alert.alert).toHaveBeenCalledWith('Coming soon', expect.stringContaining('Audio'));
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play original audio'));
+    });
+
+    expect(mockGenerate).not.toHaveBeenCalled();
+    expect(mockGetClip).toHaveBeenCalledWith(fakeResult.originalAudioId);
+    expect(_mockPlayer.play).toHaveBeenCalledTimes(1);
   });
 
-  it('play audio button shows coming-soon alert', async () => {
+  it('plays the translation clip', async () => {
     await renderWithResult();
-    fireEvent.press(screen.getByLabelText('Play audio'));
-    expect(Alert.alert).toHaveBeenCalledWith('Coming soon', expect.stringContaining('Audio'));
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio'));
+    });
+
+    expect(mockGetClip).toHaveBeenCalledWith(fakeResult.translatedAudioId);
   });
 
+  it('synthesizes a clip when the lookup has none', async () => {
+    await renderWithResult(noStoredClips);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play original audio'));
+    });
+
+    expect(mockGenerate).toHaveBeenCalledWith('ephemeral', 'ENGLISH');
+    expect(mockGetClip).toHaveBeenCalledWith('generated-id');
+  });
+
+  it('synthesizes the translation in the translated language', async () => {
+    await renderWithResult(noStoredClips);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio'));
+    });
+
+    expect(mockGenerate).toHaveBeenCalledWith('эфемерный', 'RUSSIAN');
+  });
+
+  it('saves the synthesized clip ids with the phrase', async () => {
+    mockGenerate
+      .mockResolvedValueOnce({ audio_id: 'original-clip' })
+      .mockResolvedValueOnce({ audio_id: 'translated-clip' });
+    await renderWithResult(noStoredClips);
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play original audio'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Save for study'));
+    });
+
+    await waitFor(() =>
+      expect(mockSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          originalAudioId: 'original-clip',
+          translatedAudioId: 'translated-clip',
+        })
+      )
+    );
+  });
+
+  it('prefers the stored ids over synthesized ones when saving', async () => {
+    await renderWithResult();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play original audio'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Save for study'));
+    });
+
+    await waitFor(() =>
+      expect(mockSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          originalAudioId: fakeResult.originalAudioId,
+          translatedAudioId: fakeResult.translatedAudioId,
+        })
+      )
+    );
+  });
+
+  it('stops playback when the same speaker is pressed again', async () => {
+    await renderWithResult();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play original audio'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play original audio'));
+    });
+
+    expect(_mockPlayer.pause).toHaveBeenCalledTimes(1);
+    expect(_mockPlayer.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the synthesized id when a new lookup replaces the result', async () => {
+    await renderWithResult(noStoredClips);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play original audio'));
+    });
+
+    mockLookup.mockResolvedValueOnce({
+      ...noStoredClips,
+      originalWord: 'fleeting',
+      translatedWord: 'мимолётный',
+    });
+    fireEvent.changeText(screen.getByLabelText('Phrase input'), 'fleeting');
+    await act(async () => fireEvent(screen.getByLabelText('Phrase input'), 'submitEditing'));
+    await waitFor(() => expect(screen.getByDisplayValue('мимолётный')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Save for study'));
+    });
+
+    await waitFor(() =>
+      expect(mockSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          originalWord: 'fleeting',
+          originalAudioId: null,
+          translatedAudioId: null,
+        })
+      )
+    );
+  });
 });
 
 describe('TranslatorScreen — save phrase', () => {

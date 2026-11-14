@@ -3,6 +3,8 @@ import { Alert } from 'react-native';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import VocabularyScreen from '../../../app/(tabs)/vocabulary';
 import { phrasesApi } from '../../../src/api/phrases';
+import { audioApi } from '../../../src/api/audio';
+import { clearAudioClipCache } from '../../../src/audio/useAudioPlayback';
 import { useLanguage } from '../../../src/context/LanguageContext';
 
 jest.mock('../../../src/api/phrases', () => ({
@@ -16,6 +18,10 @@ jest.mock('../../../src/api/phrases', () => ({
   LANGUAGE_TO_API: { en: 'ENGLISH', ru: 'RUSSIAN' },
 }));
 
+jest.mock('../../../src/api/audio', () => ({
+  audioApi: { generate: jest.fn(), getClip: jest.fn() },
+}));
+
 jest.mock('../../../src/context/LanguageContext', () => ({
   useLanguage: jest.fn(),
 }));
@@ -26,6 +32,9 @@ const mockUpdate = phrasesApi.update as jest.Mock;
 const mockDelete = phrasesApi.delete as jest.Mock;
 const mockLookup = phrasesApi.lookup as jest.Mock;
 const mockUseLanguage = useLanguage as jest.Mock;
+const mockGenerate = audioApi.generate as jest.Mock;
+const mockGetClip = audioApi.getClip as jest.Mock;
+const { _mockPlayer } = require('expo-audio');
 
 const makePhrase = (
   id: string,
@@ -38,8 +47,8 @@ const makePhrase = (
   originalLanguage: 'ENGLISH' as const,
   translatedWord,
   translatedLanguage: 'RUSSIAN' as const,
-  originalAudioId: null,
-  translatedAudioId: null,
+  originalAudioId: null as string | null,
+  translatedAudioId: null as string | null,
   examples: [],
   interval: 1,
   repetitions,
@@ -65,7 +74,10 @@ const makePage = (
 
 beforeEach(() => {
   jest.clearAllMocks();
+  clearAudioClipCache();
   mockGetAll.mockResolvedValue(makePage());
+  mockGenerate.mockResolvedValue({ audio_id: 'gen-1' });
+  mockGetClip.mockResolvedValue('data:audio/wav;base64,AAA');
   mockSave.mockResolvedValue({ id: '99' });
   mockUpdate.mockResolvedValue(makePhrase('1', 'Ephemeral Updated', 'Short-lived'));
   mockDelete.mockResolvedValue(undefined);
@@ -724,5 +736,70 @@ describe('VocabularyScreen — definition lookup', () => {
     expect(
       screen.getByPlaceholderText('e.g. Lasting for a very short time').props.value
     ).toBe('Custom edited definition');
+  });
+});
+
+// ─── Audio playback ─────────────────────────────────────────────────────────
+
+describe('VocabularyScreen — audio playback', () => {
+  it('shows a speaker for every row', async () => {
+    render(<VocabularyScreen />);
+    await waitFor(() => screen.getByText('Ephemeral'));
+
+    expect(screen.queryAllByLabelText(/^Play audio for /)).toHaveLength(2);
+  });
+
+  it('synthesizes and plays the term', async () => {
+    render(<VocabularyScreen />);
+    await waitFor(() => screen.getByText('Ephemeral'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Ephemeral'));
+    });
+
+    expect(mockGenerate).toHaveBeenCalledWith('Ephemeral', 'ENGLISH');
+    expect(mockGetClip).toHaveBeenCalledWith('gen-1');
+    expect(_mockPlayer.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('plays the stored clip without synthesizing', async () => {
+    mockGetAll.mockResolvedValue(
+      makePage([{ ...makePhrase('1', 'Ephemeral', 'Short-lived'), originalAudioId: 'clip-1' }])
+    );
+    render(<VocabularyScreen />);
+    await waitFor(() => screen.getByText('Ephemeral'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Ephemeral'));
+    });
+
+    expect(mockGenerate).not.toHaveBeenCalled();
+    expect(mockGetClip).toHaveBeenCalledWith('clip-1');
+  });
+
+  it('does not open the edit modal when the speaker is pressed', async () => {
+    render(<VocabularyScreen />);
+    await waitFor(() => screen.getByText('Ephemeral'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Ephemeral'));
+    });
+
+    expect(screen.queryByText('Edit word')).toBeNull();
+  });
+
+  it('stops playback when the same speaker is pressed again', async () => {
+    render(<VocabularyScreen />);
+    await waitFor(() => screen.getByText('Ephemeral'));
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Ephemeral'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Play audio for Ephemeral'));
+    });
+
+    expect(_mockPlayer.play).toHaveBeenCalledTimes(1);
+    expect(_mockPlayer.pause).toHaveBeenCalledTimes(1);
   });
 });
