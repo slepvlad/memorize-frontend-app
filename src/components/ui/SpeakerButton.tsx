@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   StyleSheet,
-  TouchableOpacity,
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../../theme';
+import { colors, radius } from '../../theme';
 
 interface SpeakerButtonProps {
   onPress: () => void;
@@ -25,18 +25,18 @@ export function SpeakerButton({
   onPress,
   label,
   size = 24,
-  color = colors.textSecondary,
+  color = colors.navy,
   loading = false,
   playing = false,
   style,
 }: SpeakerButtonProps) {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={loading}
       accessibilityLabel={label}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      style={[styles.button, style]}
+      style={({ pressed }) => [styles.button, pressed && styles.pressed, style]}
     >
       {loading ? (
         <ActivityIndicator size="small" color={color} />
@@ -47,12 +47,22 @@ export function SpeakerButton({
           color={color}
         />
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    padding: spacing.xs,
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    backgroundColor: colors.surface,
   },
 });

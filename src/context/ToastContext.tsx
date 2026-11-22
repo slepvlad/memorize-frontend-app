@@ -78,12 +78,12 @@ import { colors, radius, spacing, typography } from '../theme';
 
 const TYPE_STYLES: Record<
   ToastType,
-  { bg: string; border: string; text: string; icon: string }
+  { border: string; text: string; icon: string }
 > = {
-  error:   { bg: colors.dangerLight,  border: colors.danger,  text: colors.danger,   icon: '✕' },
-  success: { bg: colors.successLight, border: colors.success, text: colors.success,  icon: '✓' },
-  warning: { bg: colors.warningLight, border: colors.warning, text: colors.warning,  icon: '!' },
-  info:    { bg: colors.infoLight,    border: colors.info,    text: colors.info,     icon: 'i' },
+  error:   { border: colors.danger,  text: colors.danger,  icon: '✕' },
+  success: { border: colors.success, text: colors.success, icon: '✓' },
+  warning: { border: colors.warning, text: colors.warning, icon: '!' },
+  info:    { border: colors.info,    text: colors.info,    icon: 'i' },
 };
 
 function ToastItem({
@@ -109,7 +109,7 @@ function ToastItem({
     <Animated.View
       style={[
         styles.toast,
-        { backgroundColor: s.bg, borderLeftColor: s.border, opacity, transform: [{ translateY }] },
+        { backgroundColor: colors.card, borderLeftColor: s.border, opacity, transform: [{ translateY }] },
       ]}
     >
       <View style={[styles.iconBadge, { backgroundColor: s.border }]}>
@@ -155,6 +155,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderLeftWidth: 4,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,

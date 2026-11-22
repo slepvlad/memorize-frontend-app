@@ -13,7 +13,7 @@ import { colors, radius } from '../../theme';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'dark';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
@@ -49,7 +49,11 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? colors.textInverse : colors.primary}
+          color={
+            variant === 'primary' || variant === 'dark'
+              ? colors.textInverse
+              : colors.primaryDark
+          }
           size="small"
         />
       ) : (
@@ -77,7 +81,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: radius.lg,
     gap: 8,
     ...Platform.select({
       web: {
@@ -88,20 +91,27 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: colors.primary,
+    borderRadius: radius.full,
   },
   primaryHover: {
     backgroundColor: colors.primaryDark,
   },
+  dark: {
+    backgroundColor: colors.navy,
+    borderRadius: radius.md,
+  },
   secondary: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: radius.md,
   },
   secondaryHover: {
     backgroundColor: colors.surface,
   },
   ghost: {
     backgroundColor: 'transparent',
+    borderRadius: radius.md,
   },
   ghostHover: {
     backgroundColor: colors.surface,
@@ -111,15 +121,18 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   primaryText: {
+    color: colors.textInverse,
+  },
+  darkText: {
     color: colors.textInverse,
   },
   secondaryText: {
     color: colors.text,
   },
   ghostText: {
-    color: colors.primary,
+    color: colors.primaryDark,
   },
 });

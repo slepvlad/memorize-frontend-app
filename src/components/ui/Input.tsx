@@ -77,10 +77,10 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     ...Platform.select({
       web: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: colors.primary,
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
   },
   inputError: {
     borderColor: colors.danger,

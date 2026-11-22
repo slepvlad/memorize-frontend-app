@@ -35,7 +35,6 @@ exports[`Button renders ghost variant 1`] = `
     [
       {
         "alignItems": "center",
-        "borderRadius": 20,
         "flexDirection": "row",
         "gap": 8,
         "justifyContent": "center",
@@ -44,6 +43,7 @@ exports[`Button renders ghost variant 1`] = `
       },
       {
         "backgroundColor": "transparent",
+        "borderRadius": 14,
       },
       false,
       false,
@@ -58,10 +58,10 @@ exports[`Button renders ghost variant 1`] = `
       [
         {
           "fontSize": 16,
-          "fontWeight": "600",
+          "fontWeight": "700",
         },
         {
-          "color": "#CE6A1B",
+          "color": "#9A4C10",
         },
         undefined,
       ]
@@ -107,7 +107,6 @@ exports[`Button renders primary variant by default 1`] = `
     [
       {
         "alignItems": "center",
-        "borderRadius": 20,
         "flexDirection": "row",
         "gap": 8,
         "justifyContent": "center",
@@ -116,6 +115,7 @@ exports[`Button renders primary variant by default 1`] = `
       },
       {
         "backgroundColor": "#CE6A1B",
+        "borderRadius": 9999,
       },
       false,
       false,
@@ -130,7 +130,7 @@ exports[`Button renders primary variant by default 1`] = `
       [
         {
           "fontSize": 16,
-          "fontWeight": "600",
+          "fontWeight": "700",
         },
         {
           "color": "#FFFFFF",
@@ -179,7 +179,6 @@ exports[`Button renders secondary variant 1`] = `
     [
       {
         "alignItems": "center",
-        "borderRadius": 20,
         "flexDirection": "row",
         "gap": 8,
         "justifyContent": "center",
@@ -187,8 +186,9 @@ exports[`Button renders secondary variant 1`] = `
         "paddingVertical": 16,
       },
       {
-        "backgroundColor": "#FBF4EA",
+        "backgroundColor": "#FFFFFF",
         "borderColor": "rgba(22, 35, 63, 0.08)",
+        "borderRadius": 14,
         "borderWidth": 1,
       },
       false,
@@ -204,7 +204,7 @@ exports[`Button renders secondary variant 1`] = `
       [
         {
           "fontSize": 16,
-          "fontWeight": "600",
+          "fontWeight": "700",
         },
         {
           "color": "#16233F",
