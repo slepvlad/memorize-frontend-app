@@ -5,7 +5,7 @@ exports[`WebContainer — web desktop (width >= 768) renders phone frame on desk
   style={
     {
       "alignItems": "center",
-      "backgroundColor": "#F0EFEB",
+      "backgroundColor": "#FBF4EA",
       "flex": 1,
       "justifyContent": "center",
       "paddingVertical": 24,
@@ -16,7 +16,7 @@ exports[`WebContainer — web desktop (width >= 768) renders phone frame on desk
     style={
       [
         {
-          "backgroundColor": "#FFFFFF",
+          "backgroundColor": "#FBF4EA",
           "borderRadius": 32,
           "height": "100%",
           "maxHeight": 844,
@@ -38,7 +38,7 @@ exports[`WebContainer — withFrame prop renders with frame border by default 1`
   style={
     {
       "alignItems": "center",
-      "backgroundColor": "#F0EFEB",
+      "backgroundColor": "#FBF4EA",
       "flex": 1,
       "justifyContent": "center",
       "paddingVertical": 24,
@@ -49,7 +49,7 @@ exports[`WebContainer — withFrame prop renders with frame border by default 1`
     style={
       [
         {
-          "backgroundColor": "#FFFFFF",
+          "backgroundColor": "#FBF4EA",
           "borderRadius": 32,
           "height": "100%",
           "maxHeight": 844,
@@ -71,7 +71,7 @@ exports[`WebContainer — withFrame prop renders without frame border when withF
   style={
     {
       "alignItems": "center",
-      "backgroundColor": "#F0EFEB",
+      "backgroundColor": "#FBF4EA",
       "flex": 1,
       "justifyContent": "center",
       "paddingVertical": 24,
@@ -82,7 +82,7 @@ exports[`WebContainer — withFrame prop renders without frame border when withF
     style={
       [
         {
-          "backgroundColor": "#FFFFFF",
+          "backgroundColor": "#FBF4EA",
           "borderRadius": 32,
           "height": "100%",
           "maxHeight": 844,

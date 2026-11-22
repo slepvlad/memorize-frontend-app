@@ -80,10 +80,10 @@ const TYPE_STYLES: Record<
   ToastType,
   { bg: string; border: string; text: string; icon: string }
 > = {
-  error:   { bg: colors.dangerLight,  border: colors.danger,  text: colors.danger,        icon: '✕' },
-  success: { bg: colors.successLight, border: colors.success, text: colors.primaryDark,   icon: '✓' },
-  warning: { bg: colors.warningLight, border: colors.warning, text: '#9a6400',            icon: '!' },
-  info:    { bg: colors.infoLight,    border: colors.info,    text: colors.info,          icon: 'i' },
+  error:   { bg: colors.dangerLight,  border: colors.danger,  text: colors.danger,   icon: '✕' },
+  success: { bg: colors.successLight, border: colors.success, text: colors.success,  icon: '✓' },
+  warning: { bg: colors.warningLight, border: colors.warning, text: colors.warning,  icon: '!' },
+  info:    { bg: colors.infoLight,    border: colors.info,    text: colors.info,     icon: 'i' },
 };
 
 function ToastItem({

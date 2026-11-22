@@ -35,7 +35,7 @@ exports[`Button renders ghost variant 1`] = `
     [
       {
         "alignItems": "center",
-        "borderRadius": 16,
+        "borderRadius": 20,
         "flexDirection": "row",
         "gap": 8,
         "justifyContent": "center",
@@ -61,7 +61,7 @@ exports[`Button renders ghost variant 1`] = `
           "fontWeight": "600",
         },
         {
-          "color": "#1D9E75",
+          "color": "#CE6A1B",
         },
         undefined,
       ]
@@ -107,7 +107,7 @@ exports[`Button renders primary variant by default 1`] = `
     [
       {
         "alignItems": "center",
-        "borderRadius": 16,
+        "borderRadius": 20,
         "flexDirection": "row",
         "gap": 8,
         "justifyContent": "center",
@@ -115,7 +115,7 @@ exports[`Button renders primary variant by default 1`] = `
         "paddingVertical": 16,
       },
       {
-        "backgroundColor": "#1D9E75",
+        "backgroundColor": "#CE6A1B",
       },
       false,
       false,
@@ -179,7 +179,7 @@ exports[`Button renders secondary variant 1`] = `
     [
       {
         "alignItems": "center",
-        "borderRadius": 16,
+        "borderRadius": 20,
         "flexDirection": "row",
         "gap": 8,
         "justifyContent": "center",
@@ -187,8 +187,8 @@ exports[`Button renders secondary variant 1`] = `
         "paddingVertical": 16,
       },
       {
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "rgba(0,0,0,0.08)",
+        "backgroundColor": "#FBF4EA",
+        "borderColor": "rgba(22, 35, 63, 0.08)",
         "borderWidth": 1,
       },
       false,
@@ -207,7 +207,7 @@ exports[`Button renders secondary variant 1`] = `
           "fontWeight": "600",
         },
         {
-          "color": "#1A1A1A",
+          "color": "#16233F",
         },
         undefined,
       ]

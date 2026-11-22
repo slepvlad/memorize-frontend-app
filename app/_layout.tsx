@@ -45,14 +45,14 @@ function RootLayoutNav() {
           padding: 0;
           height: 100%;
           overflow: hidden;
-          background-color: #F0EFEB;
+          background-color: #FBF4EA;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         * { box-sizing: border-box; }
         input, textarea, button { font-family: inherit; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(22,35,63,0.2); border-radius: 4px; }
       `;
       document.head.appendChild(style);
       return () => { document.head.removeChild(style); };

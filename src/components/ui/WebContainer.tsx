@@ -38,7 +38,7 @@ export function WebContainer({ children, withFrame = true }: WebContainerProps) 
 const styles = StyleSheet.create({
   desktopBackground: {
     flex: 1,
-    backgroundColor: '#F0EFEB',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 24,
