@@ -27,8 +27,8 @@ export default function TypeInput({ question, answered, typedAnswer, onChangeTex
         style={[
           styles.typeInput,
           answered && {
-            borderColor: isCorrect ? colors.success : colors.danger,
-            backgroundColor: isCorrect ? colors.successLight : colors.dangerLight,
+            borderColor: isCorrect ? colors.primary : colors.danger,
+            backgroundColor: isCorrect ? colors.surface : colors.dangerLight,
           },
         ]}
         value={typedAnswer}
@@ -87,12 +87,12 @@ const styles = StyleSheet.create({
   typeInput: {
     borderWidth: 1.5,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md + spacing.sm,
     fontSize: 16,
     color: colors.text,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     marginBottom: spacing.md,
   },
   checkButton: {
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.primary,
     paddingVertical: 16,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     marginTop: spacing.sm,
   },
   checkButtonDisabled: {
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   checkButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textInverse,
   },
   correctAnswerBox: {

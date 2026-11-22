@@ -148,7 +148,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/quiz')}
             activeOpacity={0.8}
           >
-            <Ionicons name="help-circle-outline" size={28} color={colors.coral} />
+            <Ionicons name="help-circle-outline" size={28} color={colors.primary} />
             <Text style={styles.actionTitle}>{t('quizMe')}</Text>
             <Text style={styles.actionSub}>{t('testYourself')}</Text>
           </TouchableOpacity>
@@ -306,6 +306,7 @@ const styles = StyleSheet.create({
   },
   langBadgeText: {
     fontSize: 14,
+    color: colors.primaryDark,
   },
   avatar: {
     width: 42,
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   streakCard: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.navy,
     borderRadius: radius.xl,
     padding: 20,
     marginBottom: spacing.xl,
@@ -354,7 +355,9 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.xl,
     padding: 16,
     alignItems: 'center',
@@ -432,7 +435,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalSheet: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.xxl,
@@ -464,7 +467,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: colors.text,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     marginBottom: spacing.xl,
   },
   inputMultiline: {
@@ -474,7 +477,7 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: colors.primary,
     paddingVertical: 14,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
@@ -483,7 +486,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textInverse,
   },
 });

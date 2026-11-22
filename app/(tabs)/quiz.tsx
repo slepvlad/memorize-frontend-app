@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   sessionBadgeText: {
     fontSize: 12,
     fontWeight: '500',
-    color: colors.primary,
+    color: colors.primaryDark,
   },
   scoreBadge: {
     backgroundColor: colors.successLight,
@@ -259,12 +259,12 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.primary,
     paddingVertical: 16,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     marginTop: spacing.xxl,
   },
   nextButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textInverse,
   },
 });

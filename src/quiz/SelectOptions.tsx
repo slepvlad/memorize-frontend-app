@@ -17,7 +17,7 @@ export default function SelectOptions({ question, selected, answered, onSelect }
   const getOptionStyle = (index: number) => {
     if (!answered) return {};
     if (index === question.correctIndex) {
-      return { borderColor: colors.success, backgroundColor: colors.successLight };
+      return { borderColor: colors.primary, backgroundColor: colors.surface };
     }
     if (index === selected && index !== question.correctIndex) {
       return { borderColor: colors.danger, backgroundColor: colors.dangerLight };
@@ -28,10 +28,21 @@ export default function SelectOptions({ question, selected, answered, onSelect }
   const getCircleStyle = (index: number) => {
     if (!answered) return {};
     if (index === question.correctIndex) {
-      return { borderColor: colors.success, backgroundColor: colors.success };
+      return { borderColor: colors.primary, backgroundColor: colors.primary };
     }
     if (index === selected && index !== question.correctIndex) {
       return { borderColor: colors.danger, backgroundColor: colors.danger };
+    }
+    return {};
+  };
+
+  const getOptionTextStyle = (index: number) => {
+    if (!answered) return {};
+    if (index === question.correctIndex) {
+      return { color: colors.primaryDark, fontWeight: '700' as const };
+    }
+    if (index === selected && index !== question.correctIndex) {
+      return { color: colors.danger, fontWeight: '700' as const };
     }
     return {};
   };
@@ -65,12 +76,12 @@ export default function SelectOptions({ question, selected, answered, onSelect }
                 {String.fromCharCode(65 + i)}
               </Text>
             </View>
-            <Text style={styles.optionText}>{option}</Text>
+            <Text style={[styles.optionText, getOptionTextStyle(i)]}>{option}</Text>
             {answered && i === question.correctIndex && (
               <Ionicons
                 name="checkmark-circle"
                 size={20}
-                color={colors.success}
+                color={colors.primary}
                 style={{ marginLeft: 'auto' }}
               />
             )}
@@ -113,10 +124,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     padding: 16,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
   optionCircle: {
     width: 28,

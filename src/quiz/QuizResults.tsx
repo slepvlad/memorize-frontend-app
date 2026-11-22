@@ -93,18 +93,22 @@ const styles = StyleSheet.create({
   },
   summary: {
     alignItems: 'center',
-    paddingVertical: spacing.xxxl,
+    backgroundColor: colors.navy,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
     gap: spacing.md,
   },
   score: {
     fontSize: 56,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textInverse,
     letterSpacing: -1,
   },
   pct: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.7)',
   },
   badge: {
     paddingHorizontal: 16,
@@ -118,11 +122,11 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 13,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    fontWeight: '700',
+    color: colors.primaryDark,
     marginBottom: spacing.md,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.7,
   },
   resultRow: {
     flexDirection: 'row',
@@ -145,12 +149,12 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.primary,
     paddingVertical: 16,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     marginTop: spacing.xxl,
   },
   newSessionText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textInverse,
   },
 });

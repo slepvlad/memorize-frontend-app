@@ -139,7 +139,7 @@ export default function LearnScreen() {
           )}
 
           <TouchableOpacity style={styles.restartButton} onPress={loadPhrases}>
-            <Ionicons name="refresh" size={18} color={colors.primary} />
+            <Ionicons name="refresh" size={18} color={colors.primaryDark} />
             <Text style={styles.restartButtonText}>{t('studyAgain')}</Text>
           </TouchableOpacity>
         </View>
@@ -306,10 +306,8 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     maxHeight: 380,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
     padding: spacing.xxl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -342,7 +340,7 @@ const styles = StyleSheet.create({
   },
   flipHint: {
     fontSize: 13,
-    color: colors.primary,
+    color: colors.primaryDark,
     marginTop: 24,
   },
   definition: {
@@ -361,10 +359,10 @@ const styles = StyleSheet.create({
   diffButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radius.md,
+    borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     alignItems: 'center',
   },
   diffText: {
@@ -394,20 +392,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     width: '100%',
     marginBottom: spacing.md,
   },
   quizButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textInverse,
   },
   quizDisabled: {
     width: '100%',
     padding: spacing.lg,
     borderRadius: radius.lg,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginBottom: spacing.md,
     alignItems: 'center',
   },
@@ -423,14 +423,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.card,
     width: '100%',
   },
   restartButtonText: {
     fontSize: 15,
     fontWeight: '500',
-    color: colors.primary,
+    color: colors.primaryDark,
   },
 });

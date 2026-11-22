@@ -27,10 +27,6 @@ export const colors = {
   info: '#2F6FA8',
   infoLight: '#E3EDF6',
 
-  // stopgaps until phase 3 remaps the two call sites and drops these keys
-  coral: '#CE6A1B',
-  purple: '#16233F',
-
   chartGradientStart: '#F0C793',
 };
 

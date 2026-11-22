@@ -158,7 +158,7 @@ export default function TranslatorScreen() {
           onPress={() => router.navigate('/')}
           accessibilityLabel="Go to Home"
         >
-          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <Ionicons name="chevron-back" size={20} color={colors.primaryDark} />
           <Text style={styles.homeBtnText}>{t('home')}</Text>
         </TouchableOpacity>
         <View style={styles.headerRight}>
@@ -219,7 +219,6 @@ export default function TranslatorScreen() {
               <SpeakerButton
                 onPress={handlePlayOriginal}
                 label="Play original audio"
-                color={colors.textTertiary}
                 loading={audio.loadingKey === 'original'}
                 playing={audio.playingKey === 'original'}
               />
@@ -256,7 +255,6 @@ export default function TranslatorScreen() {
               <SpeakerButton
                 onPress={handlePlayTranslation}
                 label="Play audio"
-                color={colors.primary}
                 loading={audio.loadingKey === 'translated'}
                 playing={audio.playingKey === 'translated'}
               />
@@ -339,7 +337,7 @@ const styles = StyleSheet.create({
   homeBtnText: {
     fontSize: 17,
     fontWeight: '400',
-    color: colors.primary,
+    color: colors.primaryDark,
   },
   headerRight: {
     flexDirection: 'row',
@@ -441,10 +439,10 @@ const styles = StyleSheet.create({
   },
   examplesTitle: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.textTertiary,
+    fontWeight: '700',
+    color: colors.primaryDark,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.7,
     marginBottom: spacing.xs,
   },
   exampleItem: {

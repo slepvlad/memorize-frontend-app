@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { useAuth } from '../../src/context/AuthContext';
-import { colors, spacing } from '../../src/theme';
+import { colors, spacing, radius } from '../../src/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dangerLight,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: radius.md,
     marginBottom: spacing.xxl,
   },
   errorBannerText: {
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    color: colors.primary,
+    color: colors.primaryDark,
     fontWeight: '500',
   },
   divider: {
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: 13,
-    color: colors.primary,
+    color: colors.primaryDark,
     fontWeight: '500',
   },
 });

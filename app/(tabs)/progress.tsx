@@ -8,7 +8,7 @@ import { statsApi, StatsSummary } from '../../src/api/stats';
 import { Button } from '../../src/components/ui/Button';
 import { colors, spacing, radius } from '../../src/theme';
 
-const STAT_COLORS = [colors.success, colors.warning, colors.info, colors.purple];
+const STAT_COLORS = [colors.primary, colors.success, colors.info, colors.navy];
 const MASTERY_COLORS = [colors.primary, colors.warning, colors.borderHover];
 
 function percentOf(part: number, total: number): number {
@@ -164,7 +164,9 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '47%',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.xl,
     padding: 16,
     alignItems: 'center',
@@ -186,7 +188,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   errorCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.xl,
     padding: spacing.xxl,
     alignItems: 'center',
@@ -213,7 +217,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.border,
     overflow: 'hidden',
   },
   masteryFill: {

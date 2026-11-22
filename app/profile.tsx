@@ -137,7 +137,7 @@ export default function ProfileScreen() {
               {profile?.email ? <Text style={styles.email}>{profile.email}</Text> : null}
               {pendingEmail ? (
                 <View style={styles.pendingNote} testID="pending-email">
-                  <Ionicons name="time-outline" size={16} color={colors.primary} />
+                  <Ionicons name="time-outline" size={16} color="rgba(255,255,255,0.75)" />
                   <Text style={styles.pendingText}>{t('pendingEmailNote', { email: pendingEmail })}</Text>
                 </View>
               ) : null}
@@ -209,7 +209,7 @@ function Row({ icon, label, value, expanded, onPress }: RowProps) {
   const chevron = expanded === undefined ? 'chevron-forward' : expanded ? 'chevron-up' : 'chevron-down';
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      <Ionicons name={icon} size={20} color={colors.primary} />
+      <Ionicons name={icon} size={20} color={colors.navy} />
       <Text style={styles.rowLabel}>{label}</Text>
       {value ? <Text style={styles.rowValue}>{value}</Text> : null}
       <Ionicons name={chevron} size={18} color={colors.textTertiary} />
@@ -250,6 +250,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.xxl,
     gap: spacing.sm,
+    backgroundColor: colors.navy,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.xl,
   },
   avatar: {
     width: AVATAR_SIZE,
@@ -274,13 +278,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: colors.primaryDark,
     borderWidth: 2,
-    borderColor: colors.background,
+    borderColor: colors.navy,
     alignItems: 'center',
     justifyContent: 'center',
   },
   email: {
     ...typography.body,
-    color: colors.text,
+    color: colors.textInverse,
     marginTop: spacing.xs,
   },
   pendingNote: {
@@ -290,25 +294,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   pendingText: {
     ...typography.bodySmall,
     flexShrink: 1,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.75)',
   },
   removePhoto: {
     ...typography.bodySmall,
-    color: colors.danger,
+    color: 'rgba(255,255,255,0.7)',
   },
   sectionTitle: {
     ...typography.label,
-    color: colors.textSecondary,
+    fontWeight: '700',
+    color: colors.primaryDark,
+    letterSpacing: 0.7,
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
@@ -344,7 +352,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.xxl,
     paddingVertical: spacing.lg,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     backgroundColor: colors.dangerLight,
   },
   logoutText: {

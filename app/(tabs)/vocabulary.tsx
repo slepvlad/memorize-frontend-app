@@ -233,7 +233,6 @@ export default function VocabularyScreen() {
             }
             label={`Play audio for ${item.originalWord}`}
             size={18}
-            color={colors.textSecondary}
             loading={audio.loadingKey === speakerKey}
             playing={audio.playingKey === speakerKey}
           />
@@ -500,7 +499,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalSheet: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.xxl,
@@ -532,7 +531,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: colors.text,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     marginBottom: spacing.xl,
   },
   inputMultiline: {
@@ -542,7 +541,7 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: colors.primary,
     paddingVertical: 14,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
@@ -561,7 +560,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textInverse,
   },
 });

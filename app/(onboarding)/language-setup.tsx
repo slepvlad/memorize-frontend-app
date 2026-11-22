@@ -232,9 +232,10 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     ...typography.label,
-    color: colors.textSecondary,
+    fontWeight: '700',
+    color: colors.primaryDark,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.7,
   },
   // Trigger (closed state)
   trigger: {
@@ -242,10 +243,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
   triggerOpen: {
     borderColor: colors.primary,
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.xxl,
@@ -331,14 +332,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     backgroundColor: colors.primary,
     paddingVertical: 16,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
   },
   saveButtonDisabled: {
     opacity: 0.45,
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textInverse,
   },
 });
