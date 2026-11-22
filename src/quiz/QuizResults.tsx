@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, radius } from '../theme';
+import { colors, spacing, radius, typography } from '../theme';
 import { QuizResult } from './types';
 
 interface Props {
@@ -87,8 +87,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.h2,
     color: colors.text,
   },
   summary: {
@@ -102,9 +101,9 @@ const styles = StyleSheet.create({
   },
   score: {
     fontSize: 56,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.textInverse,
-    letterSpacing: -1,
+    letterSpacing: -1.5,
   },
   pct: {
     fontSize: 16,

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../src/components/ui/Button';
-import { colors, spacing } from '../../src/theme';
+import { colors, spacing, typography } from '../../src/theme';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -73,10 +73,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    fontSize: 36,
-    fontWeight: '700',
+    ...typography.display,
     color: colors.text,
-    letterSpacing: -0.5,
     marginBottom: 8,
   },
   subtitle: {

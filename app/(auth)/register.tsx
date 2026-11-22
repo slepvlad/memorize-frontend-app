@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '../../src/components/ui/Input';
 import { Button } from '../../src/components/ui/Button';
 import { useAuth } from '../../src/context/AuthContext';
-import { colors, spacing, radius } from '../../src/theme';
+import { colors, spacing, radius, typography } from '../../src/theme';
 
 function getPasswordStrength(password: string): {
   score: number;
@@ -226,10 +226,8 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '600',
+    ...typography.h1,
     color: colors.text,
-    letterSpacing: -0.5,
     marginBottom: 8,
   },
   subtitle: {

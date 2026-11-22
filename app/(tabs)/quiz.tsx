@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, radius } from '../../src/theme';
+import { colors, spacing, radius, typography } from '../../src/theme';
 import { useQuizSession } from '../../src/quiz/useQuizSession';
 import SelectOptions from '../../src/quiz/SelectOptions';
 import TypeInput from '../../src/quiz/TypeInput';
@@ -211,8 +211,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.h2,
     color: colors.text,
   },
   sessionBadge: {

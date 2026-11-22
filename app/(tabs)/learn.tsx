@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { phrasesApi, PhraseResponse } from '../../src/api/phrases';
 import { useAudioPlayback } from '../../src/audio/useAudioPlayback';
 import { SpeakerButton } from '../../src/components/ui/SpeakerButton';
-import { colors, spacing, radius } from '../../src/theme';
+import { colors, spacing, radius, typography } from '../../src/theme';
 
 function getDuePhrases(phrases: PhraseResponse[]): PhraseResponse[] {
   const now = new Date();
@@ -284,8 +284,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.h2,
     color: colors.text,
   },
   counter: {
@@ -331,10 +330,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   wordText: {
-    fontSize: 36,
-    fontWeight: '700',
+    ...typography.display,
     color: colors.text,
-    letterSpacing: -0.5,
     marginTop: 8,
     textAlign: 'center',
   },

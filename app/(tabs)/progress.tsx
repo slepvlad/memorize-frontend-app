@@ -6,7 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { statsApi, StatsSummary } from '../../src/api/stats';
 import { Button } from '../../src/components/ui/Button';
-import { colors, spacing, radius } from '../../src/theme';
+import { colors, spacing, radius, typography } from '../../src/theme';
+import { Eyebrow } from '../../src/components/ui/Eyebrow';
 
 const STAT_COLORS = [colors.primary, colors.success, colors.info, colors.navy];
 const MASTERY_COLORS = [colors.primary, colors.warning, colors.borderHover];
@@ -88,6 +89,7 @@ export default function ProgressScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
         }
       >
+        <Eyebrow>{t('tabStats')}</Eyebrow>
         <Text style={styles.title}>{t('yourProgress')}</Text>
 
         {failed ? (
@@ -149,12 +151,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.h2,
     color: colors.text,
-    letterSpacing: -0.3,
     marginBottom: spacing.xxl,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   statGrid: {
     flexDirection: 'row',
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    fontWeight: '800',
+    letterSpacing: -0.8,
   },
   statLabel: {
     fontSize: 12,

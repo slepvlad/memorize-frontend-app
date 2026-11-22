@@ -20,7 +20,8 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../src/context/LanguageContext';
 import { useProfile } from '../../src/context/ProfileContext';
 import { wordsApi, WordResponse } from '../../src/api/words';
-import { colors, spacing, radius } from '../../src/theme';
+import { colors, spacing, radius, typography } from '../../src/theme';
+import { Eyebrow } from '../../src/components/ui/Eyebrow';
 import {PhraseResponse, phrasesApi} from "../../src/api/phrases";
 
 export default function HomeScreen() {
@@ -91,7 +92,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>{t('goodMorning')}</Text>
+            <Eyebrow>{t('goodMorning')}</Eyebrow>
             <Text style={styles.name}>Learner</Text>
           </View>
           <View style={styles.headerRight}>
@@ -278,15 +279,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
     marginTop: spacing.sm,
   },
-  greeting: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
   name: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.h2,
     color: colors.text,
-    letterSpacing: -0.3,
     marginTop: 2,
   },
   headerRight: {
@@ -342,10 +337,8 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
   },
   streakCount: {
-    fontSize: 36,
-    fontWeight: '700',
+    ...typography.display,
     color: colors.textInverse,
-    letterSpacing: -1,
     marginTop: 2,
   },
   quickActions: {

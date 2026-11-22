@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, radius } from '../theme';
+import { colors, spacing, radius, typography } from '../theme';
 import { SelectQuestion } from './types';
 
 interface Props {
@@ -111,10 +111,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   questionWord: {
-    fontSize: 32,
-    fontWeight: '700',
+    ...typography.h1,
     color: colors.text,
-    letterSpacing: -0.5,
   },
   options: {
     gap: 12,

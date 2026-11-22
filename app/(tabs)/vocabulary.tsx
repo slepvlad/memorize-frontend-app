@@ -20,7 +20,8 @@ import { phrasesApi, PhraseResponse, PhraseUpdateRequest, LANGUAGE_TO_API } from
 import { useAudioPlayback } from '../../src/audio/useAudioPlayback';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { SpeakerButton } from '../../src/components/ui/SpeakerButton';
-import { colors, spacing, radius } from '../../src/theme';
+import { colors, spacing, radius, typography } from '../../src/theme';
+import { Eyebrow } from '../../src/components/ui/Eyebrow';
 
 const PAGE_SIZE = 20;
 type ModalMode = 'create' | 'edit';
@@ -261,12 +262,12 @@ export default function VocabularyScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>{t('vocabularyTitle')}</Text>
           {!loading && (
-            <Text style={styles.headerSub}>
+            <Eyebrow>
               {t('wordCount', { count: totalElements })}
-            </Text>
+            </Eyebrow>
           )}
+          <Text style={styles.headerTitle}>{t('vocabularyTitle')}</Text>
         </View>
         <TouchableOpacity
           style={styles.addBtn}
@@ -405,15 +406,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.h2,
     color: colors.text,
-    letterSpacing: -0.3,
-  },
-  headerSub: {
-    fontSize: 13,
-    color: colors.textTertiary,
-    marginTop: 2,
   },
   addBtn: {
     width: 40,
