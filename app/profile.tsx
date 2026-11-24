@@ -137,7 +137,7 @@ export default function ProfileScreen() {
               {profile?.email ? <Text style={styles.email}>{profile.email}</Text> : null}
               {pendingEmail ? (
                 <View style={styles.pendingNote} testID="pending-email">
-                  <Ionicons name="time-outline" size={16} color="rgba(255,255,255,0.75)" />
+                  <Ionicons name="time-outline" size={16} color={colors.primary} />
                   <Text style={styles.pendingText}>{t('pendingEmailNote', { email: pendingEmail })}</Text>
                 </View>
               ) : null}
@@ -250,10 +250,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.xxl,
     gap: spacing.sm,
-    backgroundColor: colors.navy,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.xl,
   },
   avatar: {
     width: AVATAR_SIZE,
@@ -278,13 +274,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: colors.primaryDark,
     borderWidth: 2,
-    borderColor: colors.navy,
+    borderColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   email: {
     ...typography.body,
-    color: colors.textInverse,
+    color: colors.text,
     marginTop: spacing.xs,
   },
   pendingNote: {
@@ -294,16 +290,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: colors.surface,
   },
   pendingText: {
     ...typography.bodySmall,
     flexShrink: 1,
-    color: 'rgba(255,255,255,0.75)',
+    color: colors.textSecondary,
   },
   removePhoto: {
     ...typography.bodySmall,
-    color: 'rgba(255,255,255,0.7)',
+    color: colors.danger,
   },
   sectionTitle: {
     ...typography.label,

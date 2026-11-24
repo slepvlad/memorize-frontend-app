@@ -48,3 +48,6 @@ dist
 node_modules
 /CLAUDE.md
 /.env
+/docs
+/docs/*
+/.qwen/*
